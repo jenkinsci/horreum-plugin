@@ -1,0 +1,43 @@
+name: Version bump Horreum dependency and horreum-plugin module version
+on:
+  repository_dispatch:
+    types:
+    - upstream-release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up JDK11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 11
+      - name: Branch
+        run: git checkout -b horreum-plugin-version-bump-to-${{ github.event.client_payload.version }}
+      - name: Update Horreum version
+        run: mvn versions:set-property -Dproperty=horreum.version -DnewVersion=${{ github.event.client_payload.version }}
+      - name: Update horreum-plugin module version
+        run: mvn versions:set-property -Dproperty=revision        -DnewVersion=${{ github.event.client_payload.version }}
+      - name: Commit and push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+        run: |
+          git config user.name "Workflow [bot]"
+          git config user.email "actions@github.com"
+          git add pom.xml
+          git commit -m "Update horreum.version to ${{ github.event.client_payload.version }} and update revision to align."
+          git push
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+          commit-message: "Update horreum.version to ${{ github.event.client_payload.version }} and update revision to stay aligned."
+          branch: horreum-plugin-version-bump-to-${{ github.event.client_payload.version }}
+          title: "[bot] Automated Pull Request"
+          body: |
+            Pull Request created using workflow bot to align project version and dependency version with upstream Horreum project release notification.
+          base: main
