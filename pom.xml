@@ -56,7 +56,7 @@ THE SOFTWARE.
 	</scm>
 
 	<properties>
-		<revision>0.1.5</revision>
+		<revision>0.15.3</revision>
 		<changelist>-SNAPSHOT</changelist>
 		<scmTag>HEAD</scmTag>
 		<gitHubRepo>jenkinsci/horreum-plugin</gitHubRepo>
@@ -68,7 +68,6 @@ THE SOFTWARE.
 		<jackson.version>2.17.2</jackson.version>
 		<access-modifier.version>1.25</access-modifier.version>
 		<junit.jupiter.version>5.9.1</junit.jupiter.version>
-		<horreum.version>0.15.3</horreum.version>
 		<keycloak.version>25.0.2</keycloak.version>
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.source>11</maven.compiler.source>
@@ -169,7 +168,7 @@ THE SOFTWARE.
 		<dependency>
 			<groupId>io.hyperfoil.tools</groupId>
 			<artifactId>horreum-client</artifactId>
-			<version>${horreum.version}</version>
+			<version>${revision}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>com.fasterxml.jackson.core</groupId>
@@ -249,7 +248,7 @@ THE SOFTWARE.
 		<dependency>
 			<groupId>io.hyperfoil.tools</groupId>
 			<artifactId>horreum-infra-common</artifactId>
-			<version>${horreum.version}</version>
+			<version>${revision}</version>
 			<scope>test</scope>
 		</dependency>
 

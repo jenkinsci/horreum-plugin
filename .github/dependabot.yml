@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: daily
+      time: "02:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "[dependabot] "
+    groups:
+      horreum-deps:
+        applies-to: version-updates
+        patterns:
+          - "horreum-*"
