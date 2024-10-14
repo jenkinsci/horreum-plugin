@@ -62,7 +62,7 @@ THE SOFTWARE.
 		<gitHubRepo>jenkinsci/horreum-plugin</gitHubRepo>
 
 		<!-- 2.361 -->
-		<jenkins.version>2.440.3</jenkins.version>
+		<jenkins.version>2.480</jenkins.version>
 		<hpi-plugin.version>3.37</hpi-plugin.version>
 		<forkCount>1C</forkCount>
 		<jackson.version>2.17.2</jackson.version>
