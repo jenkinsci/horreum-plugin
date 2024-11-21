@@ -124,10 +124,10 @@ public class HorreumUploadExecutionContext extends BaseExecutionContext<String> 
 		Response response;
 		if (buildInfo == null) {
 			response = client.runService.addRunFromData(
-					start, stop, test, owner, access, null, schema, null,	data);
+					start, stop, test, owner, access, schema, null,	data);
 		} else {
 			response = client.runService.addRunFromData(
-					start, stop, test, owner, access, null, schema, null,	data, buildInfo);
+					start, stop, test, owner, access, schema, null,	data, buildInfo);
 		}
 		Object entity = response.getEntity();
 		String id;

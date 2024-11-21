@@ -77,7 +77,7 @@ public class HorreumUploadStepTest extends HorreumPluginTestBase {
       RunService.RunsSummary summary = getHorreumClient().runService.listTestRuns(dummyTest.id, false, null, null, "", null);
       assertEquals(1, summary.total);
       assertEquals(1, summary.runs.size());
-      RunService.RunExtended runObject = getHorreumClient().runService.getRun(summary.runs.get(0).id,summary.runs.get(0).token);
+      RunService.RunExtended runObject = getHorreumClient().runService.getRun(summary.runs.get(0).id);
       assertNotNull(runObject);
       assertInstanceOf(RunService.RunExtended.class, runObject,"run should return a RunService.RunExtended");
       Object data = runObject.data;
