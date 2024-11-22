@@ -19,7 +19,6 @@ import hudson.util.XStream2;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 
-import jenkins.plugins.horreum.auth.KeycloakAuthentication;
 import jenkins.plugins.horreum.util.HttpRequestNameValuePair;
 
 @Extension
@@ -29,7 +28,6 @@ public class HorreumGlobalConfig extends GlobalConfiguration {
 
 	 private String baseUrl;
 	 private List<Long> retries = LongStream.of(5, 10, 30, 60, 120).boxed().collect(Collectors.toList());
-	 private final KeycloakAuthentication keycloak = new KeycloakAuthentication();
 
     public HorreumGlobalConfig() {
         load();
@@ -61,10 +59,6 @@ public class HorreumGlobalConfig extends GlobalConfiguration {
 		return GlobalConfiguration.all().get(HorreumGlobalConfig.class);
    }
 
-	public KeycloakAuthentication getAuthentication() {
-    	return keycloak;
-   }
-
    public String getBaseUrl(){
     	return this.baseUrl;
 	}
@@ -72,39 +66,6 @@ public class HorreumGlobalConfig extends GlobalConfiguration {
 	public void setBaseUrl(
 			String baseUrl) {
 		this.baseUrl = baseUrl;
-	}
-
-	public String getKeyName(){
-    	return keycloak.getKeyName();
-	}
-
-	public void setKeycloakBaseUrl(
-			String baseUrl) {
-		keycloak.setBaseUrl(baseUrl);
-	}
-
-	public String getKeycloakBaseUrl(){
-		return keycloak.getBaseUrl();
-	}
-
-	public String getKeycloakRealm(){
-		return keycloak.getRealm();
-	}
-
-	public void setKeycloakRealm(String realm){
-		keycloak.setRealm(realm);
-	}
-
-	public String getClientId(){
-    	return keycloak.getClientId();
-	}
-	public void setClientId( String clientId){
-    	keycloak.setClientId(clientId);
-	}
-
-	public static KeycloakAuthentication getKeycloakAuthentication(){
-		HorreumGlobalConfig globalConfig = GlobalConfiguration.all().get(HorreumGlobalConfig.class);
-		return globalConfig == null ? null : globalConfig.keycloak;
 	}
 
 	public List<Long> retries() {

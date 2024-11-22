@@ -26,13 +26,11 @@ import hudson.remoting.RemoteOutputStream;
 import hudson.security.ACL;
 import io.hyperfoil.tools.HorreumClient;
 import jenkins.model.Jenkins;
-import jenkins.plugins.horreum.auth.KeycloakAuthentication;
 import jenkins.security.MasterToSlaveCallable;
 
 public abstract class BaseExecutionContext<R> extends MasterToSlaveCallable<R, RuntimeException> {
    protected final String url;
    protected final String credentialsID;
-   protected final KeycloakAuthentication keycloak;
    protected final List<Long> retries;
    protected final OutputStream remoteLogger;
    protected final UsernamePasswordCredentials usernameCredentials;
@@ -42,7 +40,6 @@ public abstract class BaseExecutionContext<R> extends MasterToSlaveCallable<R, R
       this.url = url;
       this.credentialsID = credentials;
       HorreumGlobalConfig globalConfig = HorreumGlobalConfig.get();
-      keycloak = globalConfig.getAuthentication();
       retries = globalConfig.retries();
       this.remoteLogger = new RemoteOutputStream(new CloseProofOutputStream(logger));
       this.localLogger = logger;

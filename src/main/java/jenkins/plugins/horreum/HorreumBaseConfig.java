@@ -23,8 +23,6 @@ public abstract class HorreumBaseConfig implements Serializable {
 
    private Boolean quiet = DEFAULT_QUIET;
    private Boolean abortOnFailure = DEFAULT_ABORT_ON_FAILURE;
-   private String keycloakRealm;
-   private String clientId;
    private String credentials;
 
    public boolean getAbortOnFailure() {
@@ -41,23 +39,6 @@ public abstract class HorreumBaseConfig implements Serializable {
 
    public void setQuiet(@Nonnull Boolean quiet) {
       this.quiet = quiet;
-   }
-
-   //TODO:: abstract away keycloak specific config
-   public String getKeycloakRealm() {
-      return keycloakRealm;
-   }
-
-   public void setKeycloakRealm(String keycloakRealm) {
-      this.keycloakRealm = keycloakRealm;
-   }
-
-   public String getClientId() {
-      return clientId;
-   }
-
-   public void setClientId(String clientId) {
-      this.clientId = clientId;
    }
 
    public String getCredentials() {

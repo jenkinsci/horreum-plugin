@@ -28,23 +28,5 @@
 				<f:textbox default="5, 10, 30, 60, 120"/>
 			</f:entry>
 		</f:entry>
-        <f:entry title="Authentication Configuration">
-			<local:blockWrapper>
-
-				<f:entry title="Keycloak Host" field="keycloakBaseUrl">
-					<f:textbox name="keycloakBaseUrl" />
-				</f:entry>
-
-				<f:entry title="Keycloak Realm" field="keycloakRealm">
-					<f:textbox name="keycloakRealm" default="horreum" />
-				</f:entry>
-
-				<f:entry title="Keycloak Client ID" field="clientId">
-					<f:textbox name="clientId" default="horreum-ui"/>
-				</f:entry>
-			</local:blockWrapper>
-        </f:entry>
-
-
     </f:section>
 </j:jelly>

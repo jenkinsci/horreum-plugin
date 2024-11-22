@@ -111,9 +111,6 @@ public class HorreumTestExtension {
                 try {
                     HorreumGlobalConfig globalConfig = HorreumGlobalConfig.get();
                     if (globalConfig != null) {
-                        globalConfig.setKeycloakRealm("horreum");
-                        globalConfig.setClientId("horreum-ui");
-                        globalConfig.setKeycloakBaseUrl(ConfigService.KEYCLOAK_BOOTSTRAP_URL);
                         String baseUrl = String.format("http://%s:%s", horreumHost, horreumPort);
                         globalConfig.setBaseUrl(baseUrl);
                     } else {
@@ -125,7 +122,6 @@ public class HorreumTestExtension {
                     log.fatal("Could not configure basic credentials re-configure Keycloak", throwable);
                     throw new RuntimeException(throwable);
                 }
-
             }
         }
     }

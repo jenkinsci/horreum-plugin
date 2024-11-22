@@ -35,8 +35,6 @@ public abstract class HorreumBaseDescriptor extends BuildStepDescriptor<Builder>
 
       List<ListBoxModel.Option> options = new ArrayList<>();
 
-      options.add(new ListBoxModel.Option(HorreumGlobalConfig.get().getAuthentication().getKeyName()));
-
       AbstractIdCredentialsListBoxModel<StandardListBoxModel, StandardCredentials> items = new StandardListBoxModel()
             .includeEmptyValue()
             .includeAs(ACL.SYSTEM,

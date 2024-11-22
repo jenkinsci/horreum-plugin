@@ -27,10 +27,7 @@ public final class HorreumExpectStep extends HorreumBaseStep<HorreumExpectConfig
 									 String backlink) {
 		super(new HorreumExpectConfig(credentials, test, timeout, expectedBy, backlink));
 
-		//Populate step config from Global state
-		HorreumGlobalConfig globalConfig = HorreumGlobalConfig.get();
-		this.config.setKeycloakRealm(globalConfig.getKeycloakRealm());
-		this.config.setClientId(globalConfig.getClientId());
+		// Populate step config from Global state HorreumGlobalConfig.get();
 	}
 
 	public String getTest() {
