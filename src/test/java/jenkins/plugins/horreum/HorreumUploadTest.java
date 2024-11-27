@@ -1,6 +1,7 @@
 package jenkins.plugins.horreum;
 
 import static jenkins.plugins.horreum.junit.HorreumTestExtension.*;
+import static jenkins.plugins.horreum.junit.HorreumTestClientExtension.getApiKeyClient;
 import static jenkins.plugins.horreum.junit.HorreumTestClientExtension.getHorreumClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import io.hyperfoil.tools.HorreumClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.jvnet.hudson.test.CreateFileBuilder;
@@ -29,7 +31,7 @@ public class HorreumUploadTest extends HorreumPluginTestBase {
 	@Test
 	public void testUpload(TestInfo info) throws Exception {
 		URL jsonResource = Thread.currentThread().getContextClassLoader().getResource("data/config-quickstart.jvm.json");
-		io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(info.getTestClass() + "-upload-single", "dev-team");
+		io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(getHorreumClient(), info.getTestClass() + "-upload-single", "dev-team");
 
 		// Prepare HttpRequest#
 		HorreumUpload horreumUpload = new HorreumUpload(
@@ -46,14 +48,37 @@ public class HorreumUploadTest extends HorreumPluginTestBase {
 			true
 		);
 
-		runInFreeStyleProject("Horreum-Upload-Freestyle", dummyTest, horreumUpload);
+		runInFreeStyleProject(getHorreumClient(), "Horreum-Upload-Freestyle", dummyTest, horreumUpload);
+	}
+
+	@Test
+	public void testApiKeyUpload(TestInfo info) throws Exception {
+		URL jsonResource = Thread.currentThread().getContextClassLoader().getResource("data/config-quickstart.jvm.json");
+		io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(getApiKeyClient(), info.getTestClass() + "-upload-apikey-single", "dev-team");
+
+		// Prepare HttpRequest#
+		HorreumUpload horreumUpload = new HorreumUpload(
+				AuthenticationType.API_KEY.name(),
+				HORREUM_API_KEY_CREDENTIALS,
+				dummyTest.name,
+				dummyTest.owner,
+				"PUBLIC",
+				"$.build-timestamp",
+				"$.build-timestamp",
+				"",
+				jsonResource.getPath(),
+				null,
+				true
+		);
+
+		runInFreeStyleProject(getApiKeyClient(), "Horreum-Upload-ApiKey-Freestyle", dummyTest, horreumUpload);
 	}
 
 	@Test
 	public void testUploadMultiple(TestInfo info) throws Exception {
 		String json1 = readFile("data/config-quickstart.jvm.json");
 		String json2 = readFile("data/another-file.json");
-		io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(info.getTestClass() + "-upload-multiple", "dev-team");
+		io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(getHorreumClient(), info.getTestClass() + "-upload-multiple", "dev-team");
 
 		addSchema("Some schema", "urn:some-schema", dummyTest);
 		addSchema("Foobar", "urn:foobar", dummyTest);
@@ -73,7 +98,7 @@ public class HorreumUploadTest extends HorreumPluginTestBase {
 			true
 		);
 
-		RunService.RunSummary summary = runInFreeStyleProject("Horreum-Upload-Multiple", dummyTest,
+		RunService.RunSummary summary = runInFreeStyleProject(getHorreumClient(), "Horreum-Upload-Multiple", dummyTest,
 			new CreateFileBuilder("file1.json", json1),
 			new CreateFileBuilder("file2.json", json2),
 			horreumUpload);
@@ -97,7 +122,7 @@ public class HorreumUploadTest extends HorreumPluginTestBase {
 		}
 	}
 
-	private RunService.RunSummary runInFreeStyleProject(String name, io.hyperfoil.tools.horreum.api.data.Test dummyTest, Builder... builders) throws Exception {
+	private RunService.RunSummary runInFreeStyleProject(HorreumClient horreumClient, String name, io.hyperfoil.tools.horreum.api.data.Test dummyTest, Builder... builders) throws Exception {
 		// Run build
 		FreeStyleProject project = j.createFreeStyleProject(name);
 		assertTrue(builders.length > 0);
@@ -108,7 +133,7 @@ public class HorreumUploadTest extends HorreumPluginTestBase {
 		// Check expectations
 		j.assertBuildStatusSuccess(build);
 
-		RunService.RunsSummary summary = getHorreumClient().runService.listTestRuns(dummyTest.id, false, null, null, "", null);
+		RunService.RunsSummary summary = horreumClient.runService.listTestRuns(dummyTest.id, false, null, null, "", null);
 		assertEquals(1, summary.total);
 		assertEquals(1, summary.runs.size());
 		return summary.runs.get(0);

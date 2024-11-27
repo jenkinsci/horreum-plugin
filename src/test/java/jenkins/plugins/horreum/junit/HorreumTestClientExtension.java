@@ -6,17 +6,26 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class HorreumTestClientExtension extends HorreumTestExtension implements BeforeAllCallback {
-    private static HorreumClient horreumClient;
+    private static HorreumClient horreumClient, apiKeyClient;
 
     public static void instantiateClient() {
         if (horreumClient == null) {
-            String horreumUrl = "http://".concat(horreumHost).concat(":").concat(horreumPort).concat("/");
             horreumClient = new HorreumClient.Builder()
-                .horreumUrl(horreumUrl)
+                .horreumUrl(getHorreumURL())
                 .horreumUser("horreum.bootstrap")
                 .horreumPassword("secret")
                 .build();
             Assertions.assertNotNull(horreumClient);
+        }
+    }
+
+    public static void instantiateApiKeyClient() {
+        if (apiKeyClient == null) {
+            apiKeyClient = new HorreumClient.Builder()
+                    .horreumUrl(getHorreumURL())
+                    .horreumApiKey(horreumApiKey)
+                    .build();
+            Assertions.assertNotNull(apiKeyClient);
         }
     }
 
@@ -25,6 +34,13 @@ public class HorreumTestClientExtension extends HorreumTestExtension implements 
             instantiateClient();
         }
         return horreumClient;
+    }
+
+    public static HorreumClient getApiKeyClient() {
+        if (apiKeyClient == null) {
+            instantiateApiKeyClient();
+        }
+        return apiKeyClient;
     }
 
     @Override

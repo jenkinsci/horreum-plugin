@@ -1,23 +1,26 @@
 package jenkins.plugins.horreum.junit;
 
 import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import io.hyperfoil.tools.horreum.api.services.ConfigService;
+import hudson.util.Secret;
+import io.hyperfoil.tools.HorreumClient;
+import io.hyperfoil.tools.horreum.api.services.UserService;
 import io.hyperfoil.tools.horreum.infra.common.SelfSignedCert;
 import jenkins.plugins.horreum.HorreumGlobalConfig;
 import jenkins.plugins.horreum.JenkinsExtension;
 import org.jboss.logging.Logger;
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.jupiter.api.extension.*;
 
 import java.io.InputStream;
 import java.util.*;
 
+import static com.cloudbees.plugins.credentials.CredentialsScope.GLOBAL;
+import static io.hyperfoil.tools.horreum.api.services.UserService.KeyType.USER;
 import static io.hyperfoil.tools.horreum.infra.common.Const.*;
 import static io.hyperfoil.tools.horreum.infra.common.HorreumResources.startContainers;
-import static java.lang.System.getProperty;
 import static jenkins.plugins.horreum.it.JenkinsResources.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -27,8 +30,10 @@ public class HorreumTestExtension {
     private static boolean started = false;
     public static String horreumHost;
     public static String horreumPort = "8080";
+    public static String horreumApiKey;
     private static final Map<Domain, List<Credentials>> credentials = new HashMap<>();
     public static final String HORREUM_UPLOAD_CREDENTIALS = "horreum-creds";
+    public static final String HORREUM_API_KEY_CREDENTIALS = "horreum-key";
     public static final String DEFAULT_BOOTSTRAP_USERNAME = "horreum.bootstrap";
     public static final String DEFAULT_BOOTSTRAP_PASSWORD = "secret";
 
@@ -111,15 +116,27 @@ public class HorreumTestExtension {
                 try {
                     HorreumGlobalConfig globalConfig = HorreumGlobalConfig.get();
                     if (globalConfig != null) {
-                        String baseUrl = String.format("http://%s:%s", horreumHost, horreumPort);
-                        globalConfig.setBaseUrl(baseUrl);
+                        globalConfig.setBaseUrl(getHorreumURL());
                     } else {
                         System.out.println("Can not find Horreum Global Config");
                     }
-                    credentials.put(Domain.global(), new ArrayList<Credentials>());
+                    credentials.put(Domain.global(), new ArrayList<>());
                     registerBasicCredential(HORREUM_UPLOAD_CREDENTIALS, DEFAULT_BOOTSTRAP_USERNAME, DEFAULT_BOOTSTRAP_PASSWORD);
                 } catch (Throwable throwable) {
                     log.fatal("Could not configure basic credentials re-configure Keycloak", throwable);
+                    throw new RuntimeException(throwable);
+                }
+                try (HorreumClient horreumClient = new HorreumClient.Builder()
+                        .horreumUrl(getHorreumURL())
+                        .horreumUser(DEFAULT_BOOTSTRAP_USERNAME)
+                        .horreumPassword(DEFAULT_BOOTSTRAP_PASSWORD)
+                        .build()) {
+
+                    horreumApiKey = horreumClient.userService.newApiKey(new UserService.ApiKeyRequest("Jenkins plugin", USER));
+                    registerApiKeyCredential(HORREUM_API_KEY_CREDENTIALS, horreumApiKey);
+
+                } catch (Throwable throwable) {
+                    log.fatal("Could not configure API key credentials", throwable);
                     throw new RuntimeException(throwable);
                 }
             }
@@ -127,11 +144,24 @@ public class HorreumTestExtension {
     }
 
     static void registerBasicCredential(String id, String username, String password) {
-        credentials.get(Domain.global()).add(
-            new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL,
-                id, "", username, password));
+        Credentials userCredentials = new UsernamePasswordCredentialsImpl(GLOBAL, id, "", username, password);
+
+        credentials.get(Domain.global()).add(userCredentials);
         SystemCredentialsProvider scp = SystemCredentialsProvider.getInstance();
         assertNotNull(scp);
         scp.setDomainCredentialsMap(credentials);
+    }
+
+    static void registerApiKeyCredential(String id, String key) {
+        Credentials keyCredentials = new StringCredentialsImpl(GLOBAL, id, "", Secret.fromString(key));
+
+        credentials.get(Domain.global()).add(keyCredentials);
+        SystemCredentialsProvider scp = SystemCredentialsProvider.getInstance();
+        assertNotNull(scp);
+        scp.setDomainCredentialsMap(credentials);
+    }
+
+    public static String getHorreumURL() {
+        return "http://" + horreumHost + ":" + horreumPort + "/";
     }
 }

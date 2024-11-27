@@ -2,6 +2,7 @@ package jenkins.plugins.horreum;
 
 import static jenkins.plugins.horreum.junit.HorreumTestExtension.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static jenkins.plugins.horreum.junit.HorreumTestClientExtension.getApiKeyClient;
 import static jenkins.plugins.horreum.junit.HorreumTestClientExtension.getHorreumClient;
 
 import java.net.URL;
@@ -20,7 +21,7 @@ public class HorreumUploadStepTest extends HorreumPluginTestBase {
    public void testUpload() throws Exception {
       URL jsonResource = Thread.currentThread().getContextClassLoader().getResource("data/config-quickstart.jvm.json");
       WorkflowJob proj = j.jenkins.createProject(WorkflowJob.class, "Horreum-Upload-Pipeline-testUpload");
-      io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest("upload-single", "dev-team");
+      io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(getHorreumClient(), "upload-single", "dev-team");
       proj.setDefinition(new CpsFlowDefinition(
           "node {\n" +
               "def id = horreumUpload(\n" +
@@ -48,6 +49,37 @@ public class HorreumUploadStepTest extends HorreumPluginTestBase {
    }
 
    @Test
+   public void testUploadApiKey() throws Exception {
+      URL jsonResource = Thread.currentThread().getContextClassLoader().getResource("data/config-quickstart.jvm.json");
+      WorkflowJob proj = j.jenkins.createProject(WorkflowJob.class, "Horreum-Upload-ApiKey-Pipeline-testUpload");
+      io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(getHorreumClient(), "upload-apikey-single", "dev-team");
+      proj.setDefinition(new CpsFlowDefinition(
+              "node {\n" +
+              "def id = horreumUpload(\n" +
+              "authenticationType: '" + AuthenticationType.API_KEY.name() + "',\n" +
+              "credentials: '" + HORREUM_API_KEY_CREDENTIALS + "',\n" +
+              "test: '" + dummyTest.name + "',\n" +
+              "owner: '" + dummyTest.owner + "',\n" +
+              "access: 'PUBLIC',\n" +
+              "start: '$.build-timestamp',\n" +
+              "stop: '$.build-timestamp',\n" +
+              "jsonFile: '" + jsonResource.getPath() + "',\n" +
+              "addBuildInfo: true\n" +
+              ")\n" +
+              "println(id)\n" +
+              "}\n",
+              true));
+
+      WorkflowRun run = proj.scheduleBuild2(0).get();
+
+      j.assertBuildStatusSuccess(run);
+
+      RunService.RunsSummary summary = getApiKeyClient().runService.listTestRuns(dummyTest.id, false, null, null, "", null);
+      assertEquals(1, summary.total);
+      assertEquals(1, summary.runs.size());
+   }
+
+   @Test
    public void testUploadMultiple(TestInfo info) throws Exception {
       URL jsonResource1 = Thread.currentThread().getContextClassLoader().getResource("data/config-quickstart.jvm.json");
       URL jsonResource2 = Thread.currentThread().getContextClassLoader().getResource("data/another-file.json");
@@ -57,7 +89,7 @@ public class HorreumUploadStepTest extends HorreumPluginTestBase {
       FilePath folder = j.jenkins.getWorkspaceFor(proj).child("run");
       folder.child("config-quickstart.jvm.json").copyFrom(jsonResource1);
       folder.child("another-file.json").copyFrom(jsonResource2);
-      io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(info.getTestClass() + "-upload-multiple", "dev-team");
+      io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(getHorreumClient(), info.getTestClass() + "-upload-multiple", "dev-team");
       proj.setDefinition(new CpsFlowDefinition(
           "node {\n" +
               "def id = horreumUpload(\n" +
