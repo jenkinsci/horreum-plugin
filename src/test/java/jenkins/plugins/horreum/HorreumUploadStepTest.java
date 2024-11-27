@@ -24,6 +24,7 @@ public class HorreumUploadStepTest extends HorreumPluginTestBase {
       proj.setDefinition(new CpsFlowDefinition(
           "node {\n" +
               "def id = horreumUpload(\n" +
+              "authenticationType: '" + AuthenticationType.OIDC.name() + "',\n" +
               "credentials: '" + HORREUM_UPLOAD_CREDENTIALS + "',\n" +
               "test: '" + dummyTest.name + "',\n" +
               "owner: '" + dummyTest.owner + "',\n" +
@@ -60,6 +61,7 @@ public class HorreumUploadStepTest extends HorreumPluginTestBase {
       proj.setDefinition(new CpsFlowDefinition(
           "node {\n" +
               "def id = horreumUpload(\n" +
+              "authenticationType: '" + AuthenticationType.OIDC.name() + "',\n" +
               "credentials: '" + HORREUM_UPLOAD_CREDENTIALS + "',\n" +
               "test: '" + dummyTest.name + "',\n" +
               "owner: '" + dummyTest.owner + "',\n" +

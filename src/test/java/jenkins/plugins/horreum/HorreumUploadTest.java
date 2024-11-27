@@ -33,6 +33,7 @@ public class HorreumUploadTest extends HorreumPluginTestBase {
 
 		// Prepare HttpRequest#
 		HorreumUpload horreumUpload = new HorreumUpload(
+			AuthenticationType.OIDC.name(),
 			HORREUM_UPLOAD_CREDENTIALS,
 			dummyTest.name,
 			dummyTest.owner,
@@ -59,6 +60,7 @@ public class HorreumUploadTest extends HorreumPluginTestBase {
 
 		// Prepare HttpRequest#
 		HorreumUpload horreumUpload = new HorreumUpload(
+			AuthenticationType.OIDC.name(),
 			HORREUM_UPLOAD_CREDENTIALS,
 			dummyTest.name,
 			dummyTest.owner,

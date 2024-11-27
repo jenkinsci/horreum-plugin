@@ -2,6 +2,7 @@ package jenkins.plugins.horreum.upload;
 
 import javax.annotation.Nonnull;
 
+import jenkins.plugins.horreum.AuthenticationType;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -20,7 +21,8 @@ import jenkins.plugins.horreum.HorreumBaseDescriptor;
 //TODO: Make safe functionality as upload step
 public class HorreumUpload extends HorreumBaseBuilder<HorreumUploadConfig> {
 	@DataBoundConstructor
-	public HorreumUpload(@Nonnull String credentials,
+	public HorreumUpload(       @Nonnull String authenticationType,
+								@Nonnull String credentials,
 								@Nonnull String test,
 								@Nonnull String owner,
 								@Nonnull String access,
@@ -30,7 +32,7 @@ public class HorreumUpload extends HorreumBaseBuilder<HorreumUploadConfig> {
 								String jsonFile,
 								String files,
 								boolean addBuildInfo) {
-		super(new HorreumUploadConfig(credentials, test, owner, access, start, stop, schema, jsonFile, files, addBuildInfo));
+		super(new HorreumUploadConfig(authenticationType, credentials, test, owner, access, start, stop, schema, jsonFile, files, addBuildInfo));
 	}
 
 	public String getTest() {

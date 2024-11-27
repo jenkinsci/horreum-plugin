@@ -27,6 +27,7 @@ import io.hyperfoil.tools.HorreumClient;
 import io.hyperfoil.tools.horreum.api.data.Access;
 import jakarta.ws.rs.core.Response;
 import jenkins.model.Jenkins;
+import jenkins.plugins.horreum.AuthenticationType;
 import jenkins.plugins.horreum.BaseExecutionContext;
 import jenkins.plugins.horreum.HorreumGlobalConfig;
 import jenkins.plugins.horreum.util.HttpRequestNameValuePair;
@@ -67,6 +68,7 @@ public class HorreumUploadExecutionContext extends BaseExecutionContext<String> 
 		}
 		return new HorreumUploadExecutionContext(
 				url,
+				config.getAuthenticationType(),
 				config.getCredentials(),
 				params,
 				workspacePathSupplier.get(),
@@ -77,13 +79,14 @@ public class HorreumUploadExecutionContext extends BaseExecutionContext<String> 
 
 	private HorreumUploadExecutionContext(
 			String url,
+			String authenticationType,
 			String credentials,
 			List<HttpRequestNameValuePair> params,
 			String workspacePath,
 			FilePath[] uploadFiles,
 			ObjectNode buildInfo, PrintStream logger
 	) {
-		super(url, credentials, logger);
+		super(url, authenticationType, credentials, logger);
 		this.params = new HashMap<>();
 		params.forEach(param -> this.params.put(param.getName(), param));
 		this.workspacePath = workspacePath;

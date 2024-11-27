@@ -20,6 +20,15 @@ public abstract class HorreumBaseStep<C extends HorreumBaseConfig> extends Abstr
       // Populate step config from Global state HorreumGlobalConfig.get();
    }
 
+   public String getAuthenticationType() {
+      return config.getAuthenticationType();
+   }
+
+   @DataBoundSetter
+   public void setAuthenticationType(String authenticationType) {
+      config.setAuthenticationType(authenticationType);
+   }
+
    public String getCredentials() {
       return config.getCredentials();
    }

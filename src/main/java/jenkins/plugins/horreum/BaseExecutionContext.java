@@ -27,17 +27,21 @@ import hudson.security.ACL;
 import io.hyperfoil.tools.HorreumClient;
 import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 
 public abstract class BaseExecutionContext<R> extends MasterToSlaveCallable<R, RuntimeException> {
    protected final String url;
+   protected final AuthenticationType authenticationType;
    protected final String credentialsID;
    protected final List<Long> retries;
    protected final OutputStream remoteLogger;
    protected final UsernamePasswordCredentials usernameCredentials;
+   protected final StringCredentials keyCredentials;
    protected transient PrintStream localLogger;
 
-   public BaseExecutionContext(String url, String credentials, PrintStream logger) {
+   public BaseExecutionContext(String url, String authenticationType, String credentials, PrintStream logger) {
       this.url = url;
+      this.authenticationType = authenticationType == null ? AuthenticationType.OIDC : AuthenticationType.valueOf(authenticationType);
       this.credentialsID = credentials;
       HorreumGlobalConfig globalConfig = HorreumGlobalConfig.get();
       retries = globalConfig.retries();
@@ -57,6 +61,10 @@ public abstract class BaseExecutionContext<R> extends MasterToSlaveCallable<R, R
       );
       if (foundCredentials instanceof UsernamePasswordCredentials) {
          usernameCredentials = (UsernamePasswordCredentials) foundCredentials;
+         keyCredentials = null;
+      } else if (foundCredentials instanceof StringCredentials) {
+         usernameCredentials = null;
+         keyCredentials = (StringCredentials) foundCredentials;
       } else {
          throw new IllegalStateException("Could not retrieve Horreum Credentials. Please check the Horreum plugin configuration in Global Settings");
       }
@@ -137,9 +145,17 @@ public abstract class BaseExecutionContext<R> extends MasterToSlaveCallable<R, R
 
    protected HorreumClient createClient() {
       HorreumClient.Builder clientBuilder = new HorreumClient.Builder()
-            .horreumUrl(url)
-            .horreumUser(usernameCredentials.getUsername())
-            .horreumPassword(usernameCredentials.getPassword().getPlainText());
+            .horreumUrl(url);
+      switch (authenticationType) {
+         case OIDC:
+            clientBuilder.horreumUser(usernameCredentials.getUsername())
+                         .horreumPassword(usernameCredentials.getPassword().getPlainText());
+            break;
+         case API_KEY:
+            clientBuilder.horreumApiKey(keyCredentials.getSecret().getPlainText());
+            break;
+         default:
+      }
       return clientBuilder.build();
    }
 }

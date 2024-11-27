@@ -23,6 +23,7 @@ public class HorreumExpectStepTest extends HorreumPluginTestBase {
       proj.setDefinition(new CpsFlowDefinition(
           "node {\n" +
               "horreumExpect(\n" +
+              "authenticationType: '" + AuthenticationType.OIDC.name() + "',\n" +
               "credentials: '" + HORREUM_UPLOAD_CREDENTIALS + "',\n" +
               "test: '" + dummyTest.name + "',\n" +
               "timeout: 60,\n" +

@@ -23,6 +23,7 @@ public abstract class HorreumBaseConfig implements Serializable {
 
    private Boolean quiet = DEFAULT_QUIET;
    private Boolean abortOnFailure = DEFAULT_ABORT_ON_FAILURE;
+   private String authenticationType;
    private String credentials;
 
    public boolean getAbortOnFailure() {
@@ -39,6 +40,14 @@ public abstract class HorreumBaseConfig implements Serializable {
 
    public void setQuiet(@Nonnull Boolean quiet) {
       this.quiet = quiet;
+   }
+
+   public void setAuthenticationType(String authenticationType) {
+      this.authenticationType = authenticationType;
+   }
+
+   public String getAuthenticationType() {
+      return this.authenticationType;
    }
 
    public String getCredentials() {

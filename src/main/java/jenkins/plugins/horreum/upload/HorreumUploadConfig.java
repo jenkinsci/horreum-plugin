@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.model.AbstractBuild;
+import jenkins.plugins.horreum.AuthenticationType;
 import jenkins.plugins.horreum.HorreumBaseConfig;
 import jenkins.plugins.horreum.util.HttpRequestNameValuePair;
 
@@ -25,7 +26,8 @@ public class HorreumUploadConfig extends HorreumBaseConfig {
 	private String files;
 	private boolean addBuildInfo;
 
-	public HorreumUploadConfig(String credentials, String test, String owner, String access, String start, String stop, String schema, String jsonFile, String files, boolean addBuildInfo) {
+	public HorreumUploadConfig(String authenticationType, String credentials, String test, String owner, String access, String start, String stop, String schema, String jsonFile, String files, boolean addBuildInfo) {
+		this.setAuthenticationType(authenticationType);
 		this.setCredentials(credentials);
 		if (test == null || test.isEmpty()) {
 			throw new IllegalArgumentException("Test name (or ID) must be set.");

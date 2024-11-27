@@ -20,12 +20,13 @@ import jenkins.plugins.horreum.HorreumGlobalConfig;
 public final class HorreumExpectStep extends HorreumBaseStep<HorreumExpectConfig> {
 
 	@DataBoundConstructor
-	public HorreumExpectStep(String credentials,
+	public HorreumExpectStep(        String authenticationType,
+									 String credentials,
 									 String test,
 									 long timeout,
 									 String expectedBy,
 									 String backlink) {
-		super(new HorreumExpectConfig(credentials, test, timeout, expectedBy, backlink));
+		super(new HorreumExpectConfig(authenticationType, credentials, test, timeout, expectedBy, backlink));
 
 		// Populate step config from Global state HorreumGlobalConfig.get();
 	}

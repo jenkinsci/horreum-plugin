@@ -1,18 +1,5 @@
 package jenkins.plugins.horreum.upload;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
-import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
-import org.jenkinsci.plugins.workflow.steps.StepContext;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Item;
@@ -22,14 +9,24 @@ import hudson.util.ListBoxModel;
 import jenkins.plugins.horreum.BaseExecutionContext;
 import jenkins.plugins.horreum.HorreumBaseDescriptor;
 import jenkins.plugins.horreum.HorreumBaseStep;
+import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
+import org.jenkinsci.plugins.workflow.steps.StepContext;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+
+import javax.inject.Inject;
+import java.io.IOException;
 
 public final class HorreumUploadStep extends HorreumBaseStep<HorreumUploadConfig> {
 
 	@DataBoundConstructor
-	public HorreumUploadStep(String credentials,
+	public HorreumUploadStep(        String authenticationType,
+									 String credentials,
 									 String test,
 									 String owner,
-							   	 String access,
+									 String access,
 									 String start,
 									 String stop,
 									 String schema,
@@ -37,7 +34,7 @@ public final class HorreumUploadStep extends HorreumBaseStep<HorreumUploadConfig
 									 String files,
 									 boolean addBuildInfo) {
 
-		super(new HorreumUploadConfig(credentials, test, owner, access, start, stop, schema, jsonFile, files, addBuildInfo));
+		super(new HorreumUploadConfig(authenticationType, credentials, test, owner, access, start, stop, schema, jsonFile, files, addBuildInfo));
 	}
 
 	public String getTest() {

@@ -34,7 +34,7 @@ public class HorreumExpectExecutionContext extends BaseExecutionContext<Void> {
 			String backlink,
 			PrintStream logger
 	) {
-		super(url, config.getCredentials(), logger);
+		super(url, config.getAuthenticationType(), config.getCredentials(), logger);
 		this.config = config;
 		this.backlink = backlink;
 	}

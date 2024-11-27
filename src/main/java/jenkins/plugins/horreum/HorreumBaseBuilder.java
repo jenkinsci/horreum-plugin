@@ -28,6 +28,15 @@ public abstract class HorreumBaseBuilder<C extends HorreumBaseConfig> extends Bu
       Items.XSTREAM2.alias("pair", HttpRequestNameValuePair.class);
    }
 
+   public String getAuthenticationType() {
+      return config.getAuthenticationType();
+   }
+
+   @DataBoundSetter
+   public void setAuthenticationType(String authenticationType) {
+      config.setAuthenticationType(authenticationType);
+   }
+
    public String getCredentials() {
       return config.getCredentials();
    }

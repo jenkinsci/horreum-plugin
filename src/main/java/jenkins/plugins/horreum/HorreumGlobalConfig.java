@@ -27,6 +27,7 @@ public class HorreumGlobalConfig extends GlobalConfiguration {
     private static final XStream2 XSTREAM2 = new XStream2();
 
 	 private String baseUrl;
+	 private AuthenticationType authenticationType;
 	 private List<Long> retries = LongStream.of(5, 10, 30, 60, 120).boxed().collect(Collectors.toList());
 
     public HorreumGlobalConfig() {

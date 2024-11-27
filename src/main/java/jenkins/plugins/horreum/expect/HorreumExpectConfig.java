@@ -14,7 +14,8 @@ public class HorreumExpectConfig extends HorreumBaseConfig {
 	private @Nonnull String expectedBy;
 	private @Nonnull String backlink; // = "$BUILD_URL"
 
-	public HorreumExpectConfig(String credentials, String test, long timeout, String expectedBy, String backlink) {
+	public HorreumExpectConfig(String authenticationType, String credentials, String test, long timeout, String expectedBy, String backlink) {
+		this.setAuthenticationType(authenticationType);
 		this.setCredentials(credentials);
 		this.test = Objects.requireNonNull(test);
 		this.timeout = timeout;

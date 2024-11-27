@@ -21,7 +21,7 @@ public class HorreumExpectTest extends HorreumPluginTestBase {
 	public void testExpectRun(TestInfo info) throws Exception {
 		io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(info.getTestClass() + "-expect", "dev-team");
 		HorreumExpect horreumExpect = new HorreumExpect(
-			HORREUM_UPLOAD_CREDENTIALS, dummyTest.name, 60L, "Jenkins CI", "$BUILD_URL"
+			AuthenticationType.OIDC.name(), HORREUM_UPLOAD_CREDENTIALS, dummyTest.name, 60L, "Jenkins CI", "$BUILD_URL"
 		);
 
 		// Run build
