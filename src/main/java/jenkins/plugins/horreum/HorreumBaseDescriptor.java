@@ -3,6 +3,8 @@ package jenkins.plugins.horreum;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -39,7 +41,11 @@ public abstract class HorreumBaseDescriptor extends BuildStepDescriptor<Builder>
             .includeEmptyValue()
             .includeAs(ACL.SYSTEM,
                   project, StandardUsernamePasswordCredentials.class,
+                  URIRequirementBuilder.fromUri(url).build())
+            .includeAs(ACL.SYSTEM,
+                  project, StringCredentials.class,
                   URIRequirementBuilder.fromUri(url).build());
+
       items.addMissing(options);
       return items;
    }
@@ -58,8 +64,8 @@ public abstract class HorreumBaseDescriptor extends BuildStepDescriptor<Builder>
       }
       return result
             .includeEmptyValue()
-            .includeAs(ACL.SYSTEM, Jenkins.get(),
-                  UsernamePasswordCredentialsImpl.class)
+            .includeAs(ACL.SYSTEM, Jenkins.get(), UsernamePasswordCredentialsImpl.class)
+            .includeAs(ACL.SYSTEM, Jenkins.get(), StringCredentialsImpl.class)
             .includeCurrentValue(credentials);
    }
 }

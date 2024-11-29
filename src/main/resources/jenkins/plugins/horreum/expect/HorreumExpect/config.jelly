@@ -3,6 +3,7 @@
 
     <f:entry field="authenticationType" title="Authentication type">
         <select name="authenticationType">
+            <option value="BASIC">HTTP Basic</option>
             <option value="OIDC">Open ID Connect</option>
             <option value="API_KEY">API Key</option>
         </select>

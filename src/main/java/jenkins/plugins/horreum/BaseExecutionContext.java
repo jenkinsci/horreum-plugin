@@ -41,7 +41,7 @@ public abstract class BaseExecutionContext<R> extends MasterToSlaveCallable<R, R
 
    public BaseExecutionContext(String url, String authenticationType, String credentials, PrintStream logger) {
       this.url = url;
-      this.authenticationType = authenticationType == null ? AuthenticationType.OIDC : AuthenticationType.valueOf(authenticationType);
+      this.authenticationType = authenticationType == null ? AuthenticationType.BASIC : AuthenticationType.valueOf(authenticationType);
       this.credentialsID = credentials;
       HorreumGlobalConfig globalConfig = HorreumGlobalConfig.get();
       retries = globalConfig.retries();
@@ -147,6 +147,7 @@ public abstract class BaseExecutionContext<R> extends MasterToSlaveCallable<R, R
       HorreumClient.Builder clientBuilder = new HorreumClient.Builder()
             .horreumUrl(url);
       switch (authenticationType) {
+         case BASIC:
          case OIDC:
             clientBuilder.horreumUser(usernameCredentials.getUsername())
                          .horreumPassword(usernameCredentials.getPassword().getPlainText());
