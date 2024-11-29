@@ -94,6 +94,38 @@ mvn hpi:run
 
 == Configure Global Settings
 
+This plugin adds global settings for the Horreum URL and retry strategy.
+
 image::docs/images/configure-horreum-global.png[]
 
+== Configure Credentials
 
+The login details for Horreum are stored in credentials.
+
+`HTTP Basic` and `Open ID Connect` methods use credentials stored as `Username with Password`.
+
+image::docs/images/configure-credentials-username-password.png[]
+
+Horreum `API Key` authentication method use credentials stored as `Secret Text`.
+
+image::docs/images/configure-credentials-apikey.png[]
+
+Here is an example where credentials of both types are stored in Jenkins.
+
+image::docs/images/configure-credentials.png[]
+
+== Setup Authentication
+
+Both `Horreum Expect` and `Horreum Upload` build steps require authentication.
+
+For deployment where Horreum is configured without a Keycloak (or other OIDC provider), choose `HTTP Basic` as the authentication type and pick a `Username with Password` credential.
+
+image::docs/images/setup-basic-authentication.png[]
+
+If the Horreum instance is setup with Keycloak (or other OIDC provider) choose the `Open ID Connect` authentication type and pick a `Username with Password` credential.
+
+image::docs/images/setup-oidc-authentication.png[]
+
+If `API Key` is the desired authentication method (available whether Horreum is deployed with or without Keycloak / OIDC) choose a `Secret Text` credential .
+
+image::docs/images/setup-apikey-authentication.png[]
