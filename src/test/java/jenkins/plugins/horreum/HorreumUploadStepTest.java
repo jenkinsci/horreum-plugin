@@ -9,6 +9,7 @@ import java.net.URL;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import hudson.FilePath;
+import hudson.model.Result;
 import io.hyperfoil.tools.horreum.api.services.RunService;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -118,5 +119,32 @@ public class HorreumUploadStepTest extends HorreumPluginTestBase {
       assertNotNull(data);
       assertInstanceOf(ObjectNode.class, data,"data should be a ObjectNode");
       assertEquals(2,((ObjectNode) data).size(),"data should have an entry for each file");
+   }
+
+   @Test
+   public void testUploadWrongCredentials() throws Exception {
+      URL jsonResource = Thread.currentThread().getContextClassLoader().getResource("data/config-quickstart.jvm.json");
+      WorkflowJob proj = j.jenkins.createProject(WorkflowJob.class, "Horreum-Upload-Wrong-Pipeline-testUpload");
+      io.hyperfoil.tools.horreum.api.data.Test dummyTest = createTest(getHorreumClient(), "upload-wrong-single", "dev-team");
+      proj.setDefinition(new CpsFlowDefinition(
+              "node {\n" +
+              "def id = horreumUpload(\n" +
+              "authenticationType: '" + AuthenticationType.OIDC.name() + "',\n" +
+              "credentials: '" + HORREUM_API_KEY_CREDENTIALS + "',\n" +
+              "test: '" + dummyTest.name + "',\n" +
+              "owner: '" + dummyTest.owner + "',\n" +
+              "access: 'PUBLIC',\n" +
+              "start: '$.build-timestamp',\n" +
+              "stop: '$.build-timestamp',\n" +
+              "jsonFile: '" + jsonResource.getPath() + "',\n" +
+              "addBuildInfo: true\n" +
+              ")\n" +
+              "println(id)\n" +
+              "}\n",
+              true));
+
+      WorkflowRun run = proj.scheduleBuild2(0).get();
+
+      j.assertBuildStatus(Result.FAILURE, run);
    }
 }
