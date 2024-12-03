@@ -9,8 +9,8 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: "[dependabot] "
-    groups:
-      horreum-deps:
-        applies-to: version-updates
-        patterns:
-          - "horreum-*"
+    allow:
+      - dependency-name: "horreum*"
+    ignore:
+      - dependency-name: "*"
+      - dependency-exclude: "horreum*"
