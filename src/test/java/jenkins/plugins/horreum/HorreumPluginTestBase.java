@@ -14,7 +14,7 @@ public class HorreumPluginTestBase {
 		Test test = new Test();
 		test.name = name;
 		test.owner = owner;
-		return horreumClient.testService.add(test);
+		return horreumClient.testService.addTest(test);
 	}
 
 	@BeforeAll

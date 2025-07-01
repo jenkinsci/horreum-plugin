@@ -112,7 +112,7 @@ public class HorreumUploadTest extends HorreumPluginTestBase {
 		schema.uri = uri;
 		schema.owner = dummyTest.owner;
 		schema.access = Access.PUBLIC;
-		getHorreumClient().schemaService.add(schema);
+		getHorreumClient().schemaService.addSchema(schema);
 	}
 
 	private String readFile(String filename) throws IOException {
