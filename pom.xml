@@ -56,7 +56,7 @@ THE SOFTWARE.
 	</scm>
 
 	<properties>
-		<revision>0.16.1</revision>
+		<revision>0.18.6</revision>
 		<changelist>-SNAPSHOT</changelist>
 		<scmTag>HEAD</scmTag>
 		<gitHubRepo>jenkinsci/horreum-plugin</gitHubRepo>
@@ -171,9 +171,21 @@ THE SOFTWARE.
 			<artifactId>horreum-client</artifactId>
 			<version>${revision}</version>
 			<exclusions>
+<!--				<exclusion>-->
+<!--					<groupId>org.jboss.resteasy</groupId>-->
+<!--					<artifactId>resteasy-jackson2-provider</artifactId>-->
+<!--				</exclusion>-->
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
 				<exclusion>
 					<groupId>com.fasterxml.jackson.core</groupId>
 					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.datatype</groupId>
+					<artifactId>jackson-datatype-jsr310</artifactId>
 				</exclusion>
 				<exclusion>
 					<groupId>org.eclipse.microprofile.config</groupId>
@@ -182,6 +194,10 @@ THE SOFTWARE.
 				<exclusion>
 					<groupId>com.fasterxml.jackson.core</groupId>
 					<artifactId>jackson-annotations</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-io</groupId>
+					<artifactId>commons-io</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -192,6 +208,16 @@ THE SOFTWARE.
 			<version>3.5.3</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
@@ -238,12 +264,6 @@ THE SOFTWARE.
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.15.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.17.2</version>
 		</dependency>
 
 		<dependency>
