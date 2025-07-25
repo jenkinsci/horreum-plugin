@@ -219,7 +219,7 @@ THE SOFTWARE.
 		<dependency>
 			<groupId>org.jenkins-ci.plugins</groupId>
 			<artifactId>credentials</artifactId>
-			<version>1087.1089.v2f1b_9a_b_040e4</version>
+			<version>1417.vd854994a_f6b_e</version>
 		</dependency>
 
 		<dependency>
