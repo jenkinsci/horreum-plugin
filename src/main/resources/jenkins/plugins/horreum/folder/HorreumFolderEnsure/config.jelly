@@ -1,0 +1,19 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:c="/lib/credentials" xmlns:j="jelly:core" xmlns:f="/lib/form">
+
+    <f:entry field="authenticationType" title="Authentication type">
+        <select name="authenticationType">
+            <option value="API_KEY">API Key</option>
+            <option value="NONE">None (security disabled)</option>
+        </select>
+    </f:entry>
+
+    <f:entry field="credentials" title="Credentials">
+        <c:select/>
+    </f:entry>
+
+    <f:entry field="folder" title="Folder">
+        <f:textbox />
+    </f:entry>
+
+</j:jelly>

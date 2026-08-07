@@ -1,0 +1,9 @@
+{
+  "testName": "my-benchmark",
+  "results": {
+    "cpu": 42.5,
+    "memory": 1024,
+    "throughput": 15000.7
+  },
+  "timestamp": "2026-07-17T10:30:00"
+}

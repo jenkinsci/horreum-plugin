@@ -3,39 +3,16 @@
 
     <f:entry field="authenticationType" title="Authentication type">
         <select name="authenticationType">
-            <option value="BASIC">HTTP Basic</option>
-            <option value="OIDC">Open ID Connect</option>
             <option value="API_KEY">API Key</option>
+            <option value="NONE">None (security disabled)</option>
         </select>
     </f:entry>
 
-    <!--j:if test="${!authenticationType.equals(NONE)}" would be nice to get this to work -->
     <f:entry field="credentials" title="Credentials">
         <c:select/>
     </f:entry>
-    <!--/j:if-->
 
-    <f:entry field="test" title="Test">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry field="owner" title="Owner">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry field="access" title="Access">
-	     <f:select />
-	 </f:entry>
-
-    <f:entry field="start" title="Start timestamp/JSON Path">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry field="stop" title="Stop timestamp/JSON Path">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry field="schema" title="Schema">
+    <f:entry field="folder" title="Folder">
         <f:textbox />
     </f:entry>
 
@@ -47,7 +24,23 @@
         <f:textbox />
     </f:entry>
 
+    <f:entry field="path" title="Path" description="Optional path within the folder for the upload.">
+        <f:textbox />
+    </f:entry>
+
     <f:entry field="addBuildInfo" title="Add build info">
+        <f:checkbox />
+    </f:entry>
+
+    <f:entry field="awaitProcessing" title="Wait for processing">
+        <f:checkbox default="true" />
+    </f:entry>
+
+    <f:entry field="processingTimeout" title="Processing timeout (seconds)">
+        <f:number default="300" />
+    </f:entry>
+
+    <f:entry field="failOnChanges" title="Fail build on detected changes">
         <f:checkbox />
     </f:entry>
 
