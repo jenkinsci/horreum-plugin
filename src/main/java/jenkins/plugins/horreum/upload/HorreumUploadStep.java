@@ -1,16 +1,17 @@
 package jenkins.plugins.horreum.upload;
 
 import java.io.IOException;
+import java.util.Set;
 
-import javax.inject.Inject;
-
-import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
+import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Item;
@@ -107,16 +108,12 @@ public final class HorreumUploadStep extends HorreumBaseStep<HorreumUploadConfig
     }
 
     @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
+    public StepExecution start(StepContext context) throws Exception {
+        return new Execution(this, context);
     }
 
     @Extension
-    public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
-
-        public DescriptorImpl() {
-            super(Execution.class);
-        }
+    public static final class DescriptorImpl extends StepDescriptor {
 
         @Override
         public String getFunctionName() {
@@ -126,6 +123,19 @@ public final class HorreumUploadStep extends HorreumBaseStep<HorreumUploadConfig
         @Override
         public String getDisplayName() {
             return "Upload JSON data to a Horreum folder";
+        }
+
+        @Override
+        public Set<? extends Class<?>> getRequiredContext() {
+            return HorreumBaseStep.requiredContext();
+        }
+
+        public ListBoxModel doFillAuthenticationTypeItems() {
+            ListBoxModel items = new ListBoxModel();
+            for (jenkins.plugins.horreum.AuthenticationType type : jenkins.plugins.horreum.AuthenticationType.values()) {
+                items.add(type.name(), type.name());
+            }
+            return items;
         }
 
         public ListBoxModel doFillCredentialsItems(
@@ -144,14 +154,17 @@ public final class HorreumUploadStep extends HorreumBaseStep<HorreumUploadConfig
         }
     }
 
-    public static final class Execution extends HorreumBaseStep.Execution<String> {
-        @Inject
-        private transient HorreumUploadStep step;
+    public static final class Execution extends HorreumBaseStep.Execution<String, HorreumUploadStep> {
+
+        Execution(HorreumUploadStep step, StepContext context) {
+            super(step, context);
+        }
 
         @Override
         protected BaseExecutionContext<String> createExecutionContext() throws Exception {
             StepContext context = getContext();
-            return HorreumUploadExecutionContext.from(step.config, null,
+            EnvVars envVars = context.get(EnvVars.class);
+            return HorreumUploadExecutionContext.from(getStep().config, envVars,
                     context.get(Run.class), context.get(TaskListener.class),
                     this::resolveWorkspacePath, this::resolveUploadFiles);
         }
@@ -171,8 +184,8 @@ public final class HorreumUploadStep extends HorreumBaseStep<HorreumUploadConfig
                 if (workspace == null) {
                     throw new IllegalStateException("Could not find workspace.");
                 }
-                String jsonFile = step.getJsonFile();
-                String files = step.getFiles();
+                String jsonFile = getStep().getJsonFile();
+                String files = getStep().getFiles();
                 if (jsonFile != null && !jsonFile.trim().isEmpty()) {
                     FilePath uploadFilePath = workspace.child(jsonFile);
                     if (!uploadFilePath.exists()) {

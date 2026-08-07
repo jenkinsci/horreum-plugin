@@ -14,16 +14,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Thin REST client for communicating with a Horreum server.
  * Uses {@link java.net.http.HttpClient} — no external HTTP library dependencies.
+ *
+ * <p>This class is {@link Serializable} so it can be sent to Jenkins agents
+ * via the remoting channel. The {@link HttpClient} is transient and lazily
+ * created on the agent side.</p>
  */
 public class HorreumClient implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final String baseUrl;
     private final String apiKey; // null when auth is disabled
 
+    private transient HttpClient httpClient;
+
     public HorreumClient(String baseUrl, String apiKey) {
+        if (baseUrl == null || baseUrl.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Horreum base URL is not configured. Please set it in Jenkins global configuration (Manage Jenkins > Horreum Configuration).");
+        }
         // strip trailing slash
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         this.apiKey = apiKey;
@@ -61,7 +71,7 @@ public class HorreumClient implements Serializable {
      */
     public long getFolderId(String name) throws HorreumClientException {
         JsonNode folder = getFolder(name);
-        if (folder == null) {
+        if (folder == null || !folder.has("id")) {
             return -1;
         }
         return folder.get("id").asLong();
@@ -82,7 +92,12 @@ public class HorreumClient implements Serializable {
         }
         HttpResponse<String> response = doPost(uri, jsonData);
         checkResponse(response, "upload");
-        return Long.parseLong(response.body().trim());
+        try {
+            return Long.parseLong(response.body().trim());
+        } catch (NumberFormatException e) {
+            throw new HorreumClientException(
+                    "upload returned unexpected response (expected numeric upload ID): " + response.body(), e);
+        }
     }
 
     /**
@@ -182,8 +197,11 @@ public class HorreumClient implements Serializable {
                     .timeout(Duration.ofSeconds(30))
                     .GET();
             addAuthHeader(builder);
-            return newHttpClient().send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
+            return getHttpClient().send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new HorreumClientException("GET " + path + " interrupted", e);
+        } catch (IOException e) {
             throw new HorreumClientException("GET " + path + " failed: " + e.getMessage(), e);
         }
     }
@@ -196,8 +214,11 @@ public class HorreumClient implements Serializable {
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body));
             addAuthHeader(builder);
-            return newHttpClient().send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
+            return getHttpClient().send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new HorreumClientException("POST " + path + " interrupted", e);
+        } catch (IOException e) {
             throw new HorreumClientException("POST " + path + " failed: " + e.getMessage(), e);
         }
     }
@@ -208,10 +229,20 @@ public class HorreumClient implements Serializable {
         }
     }
 
-    private HttpClient newHttpClient() {
-        return HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+    private HttpClient getHttpClient() {
+        if (httpClient == null) {
+            httpClient = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+        }
+        return httpClient;
+    }
+
+    /**
+     * Check if the HTTP status code indicates a retryable error (5xx or 429 Too Many Requests).
+     */
+    static boolean isRetryableStatus(int statusCode) {
+        return statusCode == 429 || (statusCode >= 500 && statusCode < 600);
     }
 
     private static void checkResponse(HttpResponse<String> response, String operation) throws HorreumClientException {

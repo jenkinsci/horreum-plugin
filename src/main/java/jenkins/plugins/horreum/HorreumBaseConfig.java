@@ -1,26 +1,14 @@
 package jenkins.plugins.horreum;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
 public abstract class HorreumBaseConfig implements Serializable {
-    static Boolean DEFAULT_QUIET = false;
-    static Boolean DEFAULT_ABORT_ON_FAILURE = true;
 
-    private Boolean quiet = DEFAULT_QUIET;
-    private Boolean abortOnFailure = DEFAULT_ABORT_ON_FAILURE;
+    private Boolean quiet = false;
     private String authenticationType;
     private String credentials;
-
-    public boolean getAbortOnFailure() {
-        return abortOnFailure;
-    }
-
-    public void setAbortOnFailure(boolean abortOnFailure) {
-        this.abortOnFailure = abortOnFailure;
-    }
 
     public Boolean getQuiet() {
         return quiet;
@@ -43,7 +31,7 @@ public abstract class HorreumBaseConfig implements Serializable {
     }
 
     public void setCredentials(String credentials) {
-        this.credentials = Objects.requireNonNull(credentials);
+        this.credentials = credentials;
     }
 
     @Nonnull

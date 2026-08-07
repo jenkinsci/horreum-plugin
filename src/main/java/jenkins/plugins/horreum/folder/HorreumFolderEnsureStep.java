@@ -1,13 +1,16 @@
 package jenkins.plugins.horreum.folder;
 
-import javax.inject.Inject;
+import java.util.Set;
 
-import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
+import org.jenkinsci.plugins.workflow.steps.StepContext;
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
+import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.Item;
 import hudson.model.TaskListener;
@@ -35,16 +38,12 @@ public final class HorreumFolderEnsureStep extends HorreumBaseStep<HorreumFolder
     }
 
     @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
+    public StepExecution start(StepContext context) throws Exception {
+        return new Execution(this, context);
     }
 
     @Extension
-    public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
-
-        public DescriptorImpl() {
-            super(Execution.class);
-        }
+    public static final class DescriptorImpl extends StepDescriptor {
 
         @Override
         public String getFunctionName() {
@@ -54,6 +53,19 @@ public final class HorreumFolderEnsureStep extends HorreumBaseStep<HorreumFolder
         @Override
         public String getDisplayName() {
             return "Ensure a Horreum folder exists";
+        }
+
+        @Override
+        public Set<? extends Class<?>> getRequiredContext() {
+            return HorreumBaseStep.requiredContext();
+        }
+
+        public ListBoxModel doFillAuthenticationTypeItems() {
+            ListBoxModel items = new ListBoxModel();
+            for (jenkins.plugins.horreum.AuthenticationType type : jenkins.plugins.horreum.AuthenticationType.values()) {
+                items.add(type.name(), type.name());
+            }
+            return items;
         }
 
         public ListBoxModel doFillCredentialsItems(
@@ -72,13 +84,16 @@ public final class HorreumFolderEnsureStep extends HorreumBaseStep<HorreumFolder
         }
     }
 
-    public static final class Execution extends HorreumBaseStep.Execution<Void> {
-        @Inject
-        private transient HorreumFolderEnsureStep step;
+    public static final class Execution extends HorreumBaseStep.Execution<Void, HorreumFolderEnsureStep> {
+
+        Execution(HorreumFolderEnsureStep step, StepContext context) {
+            super(step, context);
+        }
 
         @Override
         protected BaseExecutionContext<Void> createExecutionContext() throws Exception {
-            return HorreumFolderEnsureExecutionContext.from(step.config, null, getContext().get(TaskListener.class));
+            return HorreumFolderEnsureExecutionContext.from(getStep().config,
+                    getContext().get(EnvVars.class), getContext().get(TaskListener.class));
         }
 
         private static final long serialVersionUID = 1L;

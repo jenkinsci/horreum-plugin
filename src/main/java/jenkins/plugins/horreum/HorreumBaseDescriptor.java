@@ -16,6 +16,14 @@ import jenkins.model.Jenkins;
 
 public abstract class HorreumBaseDescriptor extends BuildStepDescriptor<Builder> {
 
+    public ListBoxModel doFillAuthenticationTypeItems() {
+        ListBoxModel items = new ListBoxModel();
+        for (AuthenticationType type : AuthenticationType.values()) {
+            items.add(type.name(), type.name());
+        }
+        return items;
+    }
+
     public ListBoxModel doFillCredentialsItems(@AncestorInPath Item item, @QueryParameter String credentials) {
         StandardListBoxModel result = new StandardListBoxModel();
         if (item == null) {

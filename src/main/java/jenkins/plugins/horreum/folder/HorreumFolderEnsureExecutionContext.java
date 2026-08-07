@@ -18,9 +18,13 @@ public class HorreumFolderEnsureExecutionContext extends BaseExecutionContext<Vo
     static HorreumFolderEnsureExecutionContext from(HorreumFolderEnsureConfig config,
                                                     EnvVars envVars,
                                                     TaskListener listener) {
-        String url = envVars != null
-                ? envVars.expand(HorreumGlobalConfig.get().getBaseUrl())
-                : HorreumGlobalConfig.get().getBaseUrl();
+        HorreumGlobalConfig globalConfig = HorreumGlobalConfig.get();
+        String baseUrl = globalConfig != null ? globalConfig.getBaseUrl() : null;
+        if (baseUrl == null || baseUrl.isBlank()) {
+            throw new IllegalStateException(
+                    "Horreum base URL is not configured. Please set it in Jenkins global configuration (Manage Jenkins > Horreum Configuration).");
+        }
+        String url = envVars != null ? envVars.expand(baseUrl) : baseUrl;
         TaskListener taskListener = config.getQuiet() ? TaskListener.NULL : listener;
 
         String folder = config.getFolder();
@@ -54,7 +58,7 @@ public class HorreumFolderEnsureExecutionContext extends BaseExecutionContext<Vo
             logger().printf("Folder '%s' already exists (id: %s)%n", folder, existing.path("id"));
         } else {
             JsonNode created = client.createFolder(folder);
-            logger().printf("Created folder '%s' (id: %s)%n", folder, created.get("id"));
+            logger().printf("Created folder '%s' (id: %s)%n", folder, created.path("id"));
         }
         return null;
     }

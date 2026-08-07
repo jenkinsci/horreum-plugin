@@ -1,11 +1,16 @@
 package jenkins.plugins.horreum;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
-import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousNonBlockingStepExecution;
+import org.jenkinsci.plugins.workflow.steps.Step;
+import org.jenkinsci.plugins.workflow.steps.StepContext;
+import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import hudson.EnvVars;
+import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Item;
 import hudson.model.Result;
@@ -13,7 +18,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 
-public abstract class HorreumBaseStep<C extends HorreumBaseConfig> extends AbstractStepImpl {
+public abstract class HorreumBaseStep<C extends HorreumBaseConfig> extends Step {
     protected final C config;
 
     protected HorreumBaseStep(C config) {
@@ -38,15 +43,6 @@ public abstract class HorreumBaseStep<C extends HorreumBaseConfig> extends Abstr
         config.setCredentials(credentials);
     }
 
-    public boolean getAbortOnFailure() {
-        return config.getAbortOnFailure();
-    }
-
-    @DataBoundSetter
-    public void setAbortOnFailure(boolean abortOnFailure) {
-        this.config.setAbortOnFailure(abortOnFailure);
-    }
-
     public Boolean getQuiet() {
         return config.getQuiet();
     }
@@ -56,7 +52,32 @@ public abstract class HorreumBaseStep<C extends HorreumBaseConfig> extends Abstr
         this.config.setQuiet(quiet);
     }
 
-    public abstract static class Execution<R> extends AbstractSynchronousNonBlockingStepExecution<R> {
+    /**
+     * Required context for all Horreum steps: Run, TaskListener, Launcher, EnvVars, FilePath.
+     */
+    public static Set<Class<?>> requiredContext() {
+        Set<Class<?>> context = new HashSet<>();
+        context.add(Run.class);
+        context.add(TaskListener.class);
+        context.add(Launcher.class);
+        context.add(EnvVars.class);
+        context.add(FilePath.class);
+        return context;
+    }
+
+    @SuppressWarnings("unchecked")
+    public abstract static class Execution<R, S extends HorreumBaseStep<?>> extends SynchronousNonBlockingStepExecution<R> {
+        private final transient S step;
+
+        protected Execution(S step, StepContext context) {
+            super(context);
+            this.step = step;
+        }
+
+        protected S getStep() {
+            return step;
+        }
+
         @Override
         protected R run() throws Exception {
             BaseExecutionContext<R> exec = createExecutionContext();
@@ -80,15 +101,11 @@ public abstract class HorreumBaseStep<C extends HorreumBaseConfig> extends Abstr
                 if (run != null) {
                     run.setResult(Result.UNSTABLE);
                 }
-                // Return null for Void steps, or the upload ID if available
-                return null;
+                // Return the upload ID even when UNSTABLE so pipeline scripts can use it
+                return (R) String.valueOf(e.getUploadId());
             }
         }
 
         protected abstract BaseExecutionContext<R> createExecutionContext() throws Exception;
-
-        public Item getProject() throws IOException, InterruptedException {
-            return getContext().get(Run.class).getParent();
-        }
     }
 }

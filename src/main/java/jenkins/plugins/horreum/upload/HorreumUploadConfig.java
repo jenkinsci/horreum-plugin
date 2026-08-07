@@ -95,6 +95,9 @@ public class HorreumUploadConfig extends HorreumBaseConfig {
     }
 
     public void setProcessingTimeout(long processingTimeout) {
+        if (processingTimeout <= 0) {
+            throw new IllegalArgumentException("Processing timeout must be positive, got: " + processingTimeout);
+        }
         this.processingTimeout = processingTimeout;
     }
 
