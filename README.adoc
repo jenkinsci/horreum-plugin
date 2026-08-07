@@ -186,18 +186,27 @@ NOTE: Building the HPI archive requires JDK 17. The CI Jenkinsfile is configured
 
 == Testing
 
+Unit tests (no Docker required):
+
 [source,bash]
 ----
 mvn test
 ----
 
+All tests including E2E (requires Docker):
+
+[source,bash]
+----
+mvn test -DincludeE2E
+----
+
 The test suite includes:
 
-* *Unit tests* (23) — WireMock-based tests for the REST client
-* *Client E2E tests* (8) — Testcontainers tests against a real Horreum instance
-* *Jenkins integration tests* (13) — Full Jenkins + Horreum end-to-end tests using JenkinsRule and Testcontainers
+* *Unit tests* (23) — WireMock-based tests for the REST client (always run)
+* *Client E2E tests* (8) — Testcontainers tests against a real Horreum instance (require Docker)
+* *Jenkins integration tests* (13) — Full Jenkins + Horreum end-to-end tests using JenkinsRule and Testcontainers (require Docker)
 
-Tests require Docker for the Testcontainers-based tests (Horreum + PostgreSQL containers).
+E2E and Jenkins integration tests are excluded by default because they require Docker. Use `-DincludeE2E` to include them.
 
 == Local Development
 

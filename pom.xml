@@ -102,6 +102,10 @@ THE SOFTWARE.
 				<configuration>
 					<forkCount>1</forkCount>
 					<reuseForks>true</reuseForks>
+					<!-- Exclude Testcontainers-based tests by default (require Docker).
+					     Run them with: mvn test -Dgroups=e2e,jenkins-e2e
+					     or: mvn test -DincludeE2E -->
+					<excludedGroups>e2e,jenkins-e2e</excludedGroups>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -228,6 +232,30 @@ THE SOFTWARE.
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<profiles>
+		<!-- Run E2E tests that require Docker (Testcontainers).
+		     Activate with: mvn test -DincludeE2E -->
+		<profile>
+			<id>e2e</id>
+			<activation>
+				<property>
+					<name>includeE2E</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<excludedGroups combine.self="override"/>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 	<developers>
 		<developer>
