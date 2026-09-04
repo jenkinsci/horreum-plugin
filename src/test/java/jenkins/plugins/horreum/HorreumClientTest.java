@@ -73,8 +73,7 @@ class HorreumClientTest {
 
     @Test
     void createFolder_success() {
-        stubFor(post(urlPathEqualTo("/api/folder"))
-                .withQueryParam("name", equalTo("new-test"))
+        stubFor(post(urlEqualTo("/api/folder"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
@@ -84,15 +83,15 @@ class HorreumClientTest {
         assertEquals(42, folder.get("id").asInt());
         assertEquals("new-test", folder.get("name").asText());
 
-        verify(postRequestedFor(urlPathEqualTo("/api/folder"))
-                .withQueryParam("name", equalTo("new-test"))
-                .withHeader("Authorization", equalTo("Bearer test-api-key")));
+        verify(postRequestedFor(urlEqualTo("/api/folder"))
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withHeader("Authorization", equalTo("Bearer test-api-key"))
+                .withRequestBody(equalToJson("{\"name\": \"new-test\"}")));
     }
 
     @Test
     void createFolder_serverError() {
-        stubFor(post(urlPathEqualTo("/api/folder"))
-                .withQueryParam("name", equalTo("bad"))
+        stubFor(post(urlEqualTo("/api/folder"))
                 .willReturn(aResponse()
                         .withStatus(500)
                         .withBody("Internal Server Error")));
@@ -133,27 +132,28 @@ class HorreumClientTest {
                         .withStatus(200)
                         .withBody("123")));
 
-        long uploadId = client.upload(1, null, "{\"cpu\": 42.5}");
+        long uploadId = client.upload(1, "{\"cpu\": 42.5}");
         assertEquals(123, uploadId);
 
         verify(postRequestedFor(urlEqualTo("/api/folder/1/upload"))
-                .withHeader("Content-Type", equalTo("application/json"))
+                .withHeader("Content-Type", containing("multipart/form-data"))
                 .withHeader("Authorization", equalTo("Bearer test-api-key"))
-                .withRequestBody(equalToJson("{\"cpu\": 42.5}")));
+                .withRequestBody(containing("\"cpu\": 42.5")));
     }
 
     @Test
-    void upload_withPath() {
-        stubFor(post(urlPathEqualTo("/api/folder/1/upload"))
+    void upload_multipart_containsRawField() {
+        stubFor(post(urlEqualTo("/api/folder/1/upload"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody("456")));
 
-        long uploadId = client.upload(1, "results/run1", "{\"data\": true}");
+        long uploadId = client.upload(1, "{\"data\": true}");
         assertEquals(456, uploadId);
 
-        verify(postRequestedFor(urlPathEqualTo("/api/folder/1/upload"))
-                .withQueryParam("path", equalTo("results/run1")));
+        verify(postRequestedFor(urlEqualTo("/api/folder/1/upload"))
+                .withRequestBody(containing("Content-Disposition: form-data; name=\"raw\""))
+                .withRequestBody(containing("{\"data\": true}")));
     }
 
     @Test
@@ -172,7 +172,7 @@ class HorreumClientTest {
                         .withStatus(200)
                         .withBody("789")));
 
-        long uploadId = client.uploadToFolder("my-test", null, "{\"data\": 1}");
+        long uploadId = client.uploadToFolder("my-test", "{\"data\": 1}");
         assertEquals(789, uploadId);
     }
 
@@ -184,7 +184,7 @@ class HorreumClientTest {
 
         HorreumClient.HorreumClientException ex = assertThrows(
                 HorreumClient.HorreumClientException.class,
-                () -> client.uploadToFolder("missing", null, "{}"));
+                () -> client.uploadToFolder("missing", "{}"));
         assertEquals(404, ex.getStatusCode());
         assertTrue(ex.getMessage().contains("not found"));
     }
@@ -198,7 +198,7 @@ class HorreumClientTest {
 
         HorreumClient.HorreumClientException ex = assertThrows(
                 HorreumClient.HorreumClientException.class,
-                () -> client.upload(1, null, "{}"));
+                () -> client.upload(1, "{}"));
         assertEquals(401, ex.getStatusCode());
     }
 
@@ -224,11 +224,11 @@ class HorreumClientTest {
 
     @Test
     void getProcessingStatus_completed() {
-        stubFor(get(urlEqualTo("/api/processing/123"))
+        stubFor(get(urlEqualTo("/api/processing/upload/123"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\": 123, \"state\": \"COMPLETED\", \"error\": null}")));
+                        .withBody("{\"nodeId\": 1, \"state\": \"COMPLETED\", \"error\": null}")));
 
         JsonNode status = client.getProcessingStatus(123);
         assertNotNull(status);
@@ -236,24 +236,24 @@ class HorreumClientTest {
     }
 
     @Test
-    void getProcessingStatus_processing() {
-        stubFor(get(urlEqualTo("/api/processing/123"))
+    void getProcessingStatus_running() {
+        stubFor(get(urlEqualTo("/api/processing/upload/123"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\": 123, \"state\": \"PROCESSING\", \"error\": null}")));
+                        .withBody("{\"nodeId\": 1, \"state\": \"RUNNING\", \"error\": null}")));
 
         JsonNode status = client.getProcessingStatus(123);
-        assertEquals("PROCESSING", status.get("state").asText());
+        assertEquals("RUNNING", status.get("state").asText());
     }
 
     @Test
     void getProcessingStatus_failed() {
-        stubFor(get(urlEqualTo("/api/processing/123"))
+        stubFor(get(urlEqualTo("/api/processing/upload/123"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\": 123, \"state\": \"FAILED\", \"error\": \"Node calculation error\"}")));
+                        .withBody("{\"nodeId\": 1, \"state\": \"FAILED\", \"error\": \"Node calculation error\"}")));
 
         JsonNode status = client.getProcessingStatus(123);
         assertEquals("FAILED", status.get("state").asText());
@@ -262,7 +262,7 @@ class HorreumClientTest {
 
     @Test
     void getProcessingStatus_notFound() {
-        stubFor(get(urlEqualTo("/api/processing/999"))
+        stubFor(get(urlEqualTo("/api/processing/upload/999"))
                 .willReturn(aResponse().withStatus(404)));
 
         assertNull(client.getProcessingStatus(999));
@@ -311,47 +311,47 @@ class HorreumClientTest {
 
     @Test
     void awaitProcessingComplete_immediatelyCompleted() {
-        stubFor(get(urlEqualTo("/api/processing/100"))
+        stubFor(get(urlEqualTo("/api/processing/upload/100"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\": 100, \"state\": \"COMPLETED\", \"error\": null}")));
+                        .withBody("{\"nodeId\": 1, \"state\": \"COMPLETED\", \"error\": null}")));
 
         JsonNode result = client.awaitProcessingComplete(100, 10, 100);
         assertEquals("COMPLETED", result.get("state").asText());
     }
 
     @Test
-    void awaitProcessingComplete_processingThenCompleted() {
-        stubFor(get(urlEqualTo("/api/processing/100"))
+    void awaitProcessingComplete_runningThenCompleted() {
+        stubFor(get(urlEqualTo("/api/processing/upload/100"))
                 .inScenario("poll")
                 .whenScenarioStateIs(Scenario.STARTED)
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\": 100, \"state\": \"PROCESSING\", \"error\": null}"))
+                        .withBody("{\"nodeId\": 1, \"state\": \"RUNNING\", \"error\": null}"))
                 .willSetStateTo("second-call"));
 
-        stubFor(get(urlEqualTo("/api/processing/100"))
+        stubFor(get(urlEqualTo("/api/processing/upload/100"))
                 .inScenario("poll")
                 .whenScenarioStateIs("second-call")
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\": 100, \"state\": \"COMPLETED\", \"error\": null}")));
+                        .withBody("{\"nodeId\": 1, \"state\": \"COMPLETED\", \"error\": null}")));
 
         JsonNode result = client.awaitProcessingComplete(100, 10, 100);
         assertEquals("COMPLETED", result.get("state").asText());
-        verify(2, getRequestedFor(urlEqualTo("/api/processing/100")));
+        verify(2, getRequestedFor(urlEqualTo("/api/processing/upload/100")));
     }
 
     @Test
     void awaitProcessingComplete_failed() {
-        stubFor(get(urlEqualTo("/api/processing/100"))
+        stubFor(get(urlEqualTo("/api/processing/upload/100"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\": 100, \"state\": \"FAILED\", \"error\": \"out of memory\"}")));
+                        .withBody("{\"nodeId\": 1, \"state\": \"FAILED\", \"error\": \"out of memory\"}")));
 
         HorreumClient.HorreumClientException ex = assertThrows(
                 HorreumClient.HorreumClientException.class,
@@ -362,11 +362,11 @@ class HorreumClientTest {
 
     @Test
     void awaitProcessingComplete_timeout() {
-        stubFor(get(urlEqualTo("/api/processing/100"))
+        stubFor(get(urlEqualTo("/api/processing/upload/100"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\": 100, \"state\": \"PROCESSING\", \"error\": null}")));
+                        .withBody("{\"nodeId\": 1, \"state\": \"RUNNING\", \"error\": null}")));
 
         HorreumClient.HorreumClientException ex = assertThrows(
                 HorreumClient.HorreumClientException.class,

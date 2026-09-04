@@ -61,7 +61,7 @@ public class HorreumClient implements Serializable {
      * Create a new folder. Returns the folder as JSON ({id, name, groupId}).
      */
     public JsonNode createFolder(String name) throws HorreumClientException {
-        HttpResponse<String> response = doPost("/api/folder?name=" + encode(name), "");
+        HttpResponse<String> response = doPost("/api/folder", "{\"name\": \"" + escapeJson(name) + "\"}");
         checkResponse(response, "create folder");
         return parseJson(response.body());
     }
@@ -79,18 +79,15 @@ public class HorreumClient implements Serializable {
 
     /**
      * Upload JSON data to a folder by ID. Returns the upload ID (root value ID).
+     * Sends the data as multipart form data with a {@code raw} form field.
      *
      * @param folderId folder ID (from {@link #createFolder} or {@link #getFolderId})
-     * @param path optional path within the folder (may be null)
      * @param jsonData the raw JSON string to upload
      * @return the upload ID
      */
-    public long upload(long folderId, String path, String jsonData) throws HorreumClientException {
+    public long upload(long folderId, String jsonData) throws HorreumClientException {
         String uri = "/api/folder/" + folderId + "/upload";
-        if (path != null && !path.isEmpty()) {
-            uri += "?path=" + encode(path);
-        }
-        HttpResponse<String> response = doPost(uri, jsonData);
+        HttpResponse<String> response = doMultipartPost(uri, "raw", jsonData);
         checkResponse(response, "upload");
         try {
             return Long.parseLong(response.body().trim());
@@ -105,16 +102,15 @@ public class HorreumClient implements Serializable {
      * If the folder does not exist, throws an exception.
      *
      * @param folderName folder name
-     * @param path optional path within the folder (may be null)
      * @param jsonData the raw JSON string to upload
      * @return the upload ID
      */
-    public long uploadToFolder(String folderName, String path, String jsonData) throws HorreumClientException {
+    public long uploadToFolder(String folderName, String jsonData) throws HorreumClientException {
         long folderId = getFolderId(folderName);
         if (folderId < 0) {
             throw new HorreumClientException("Folder '" + folderName + "' not found", 404);
         }
-        return upload(folderId, path, jsonData);
+        return upload(folderId, jsonData);
     }
 
     /**
@@ -125,7 +121,7 @@ public class HorreumClient implements Serializable {
      *         Returns null if the upload was not found (404).
      */
     public JsonNode getProcessingStatus(long uploadId) throws HorreumClientException {
-        HttpResponse<String> response = doGet("/api/processing/" + uploadId);
+        HttpResponse<String> response = doGet("/api/processing/upload/" + uploadId);
         if (response.statusCode() == 404) {
             return null;
         }
@@ -206,6 +202,29 @@ public class HorreumClient implements Serializable {
         }
     }
 
+    private HttpResponse<String> doMultipartPost(String path, String fieldName, String fieldValue) throws HorreumClientException {
+        String boundary = "----HorreumUpload" + System.currentTimeMillis();
+        String body = "--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"" + fieldName + "\"\r\n"
+                + "\r\n"
+                + fieldValue + "\r\n"
+                + "--" + boundary + "--\r\n";
+        try {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + path))
+                    .timeout(Duration.ofSeconds(60))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.ofString(body));
+            addAuthHeader(builder);
+            return getHttpClient().send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new HorreumClientException("POST " + path + " interrupted", e);
+        } catch (IOException e) {
+            throw new HorreumClientException("POST " + path + " failed: " + e.getMessage(), e);
+        }
+    }
+
     private HttpResponse<String> doPost(String path, String body) throws HorreumClientException {
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -265,6 +284,10 @@ public class HorreumClient implements Serializable {
 
     private static String encode(String value) {
         return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private static String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     /**

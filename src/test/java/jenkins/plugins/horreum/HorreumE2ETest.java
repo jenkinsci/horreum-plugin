@@ -103,7 +103,7 @@ class HorreumE2ETest {
         JsonNode folder = client.createFolder("upload-test");
         long folderId = folder.get("id").asLong();
 
-        long uploadId = client.upload(folderId, null, "{\"cpu\": 42.5, \"memory\": 1024}");
+        long uploadId = client.upload(folderId, "{\"cpu\": 42.5, \"memory\": 1024}");
         assertTrue(uploadId > 0, "Upload ID should be positive");
 
         JsonNode status = client.awaitProcessingComplete(uploadId, 30, 500);
@@ -116,7 +116,7 @@ class HorreumE2ETest {
         JsonNode folder = client.createFolder("no-detection-test");
         long folderId = folder.get("id").asLong();
 
-        long uploadId = client.upload(folderId, null, "{\"value\": 50}");
+        long uploadId = client.upload(folderId, "{\"value\": 50}");
         client.awaitProcessingComplete(uploadId, 30, 500);
 
         JsonNode changes = client.getDetectionChanges(uploadId);
@@ -133,7 +133,7 @@ class HorreumE2ETest {
         JsonNode folder = client.createFolder("auth-test");
         long folderId = folder.get("id").asLong();
 
-        long uploadId = client.upload(folderId, null, "{\"data\": true}");
+        long uploadId = client.upload(folderId, "{\"data\": true}");
         assertTrue(uploadId > 0, "Authenticated upload should succeed");
     }
 
@@ -174,7 +174,7 @@ class HorreumE2ETest {
         assertTrue(ftNodeId > 0, "FixedThreshold node should be created");
 
         // 5. Upload data with value=5 (below min=10, should trigger violation)
-        long uploadId = client.upload(folderId, null,
+        long uploadId = client.upload(folderId,
                 "{\"value\": 5, \"env\": {\"type\": \"perf-test\"}}");
 
         // 6. Wait for processing
@@ -209,7 +209,7 @@ class HorreumE2ETest {
                 "{\"min\": 10.0, \"max\": 100.0, \"minInclusive\": true, \"maxInclusive\": true}");
 
         // Upload data with value=50 (within [10, 100])
-        long uploadId = client.upload(folderId, null,
+        long uploadId = client.upload(folderId,
                 "{\"value\": 50, \"env\": {\"type\": \"perf-test\"}}");
 
         client.awaitProcessingComplete(uploadId, 60, 1000);
@@ -228,16 +228,15 @@ class HorreumE2ETest {
     }
 
     private long createNode(long groupId, String name, String type, String operation) throws Exception {
-        String url = baseUrl + "/api/node?name=" + encode(name) + "&groupId=" + groupId + "&type=" + type;
-        if (operation != null) {
-            url += "&operation=" + encode(operation);
-        }
+        String body = String.format(
+                "{\"name\": \"%s\", \"groupId\": %d, \"type\": \"%s\", \"operation\": \"%s\"}",
+                name, groupId, type, operation != null ? operation : "");
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+                .uri(URI.create(baseUrl + "/api/node"))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + BOOTSTRAP_API_KEY)
-                .POST(HttpRequest.BodyPublishers.ofString(""))
+                .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
 
         HttpResponse<String> response = HttpClient.newHttpClient()

@@ -37,7 +37,6 @@ class HorreumUploadJenkinsTest extends HorreumJenkinsTestBase {
                 "freestyle-upload",
                 "data.json",  // jsonFile
                 null,         // files (glob)
-                null,         // path
                 false         // addBuildInfo
         ));
 
@@ -57,7 +56,7 @@ class HorreumUploadJenkinsTest extends HorreumJenkinsTestBase {
                 API_KEY_CREDENTIALS_ID, // credentials ignored when NONE
                 "freestyle-noauth",
                 "data.json",
-                null, null, false
+                null, false
         ));
 
         FreeStyleBuild build = project.scheduleBuild2(0).get();

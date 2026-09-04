@@ -21,10 +21,6 @@
         <f:textbox />
     </f:entry>
 
-    <f:entry field="path" title="Path">
-        <f:textbox />
-    </f:entry>
-
     <f:entry field="addBuildInfo" title="Add build info">
         <f:checkbox />
     </f:entry>

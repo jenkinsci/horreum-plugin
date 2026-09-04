@@ -15,14 +15,13 @@ public class HorreumUploadConfig extends HorreumBaseConfig {
     private @Nonnull String folder;
     private String jsonFile;
     private String files;
-    private String path;
     private boolean addBuildInfo;
     private boolean awaitProcessing = true;
     private long processingTimeout = 300; // seconds
     private boolean failOnChanges = false;
 
     public HorreumUploadConfig(String authenticationType, String credentials, String folder,
-                               String jsonFile, String files, String path, boolean addBuildInfo) {
+                               String jsonFile, String files, boolean addBuildInfo) {
         this.setAuthenticationType(authenticationType);
         this.setCredentials(credentials);
         if (folder == null || folder.isEmpty()) {
@@ -36,7 +35,6 @@ public class HorreumUploadConfig extends HorreumBaseConfig {
         this.folder = Objects.requireNonNull(folder);
         this.jsonFile = jsonFile;
         this.files = files;
-        this.path = orEmpty(path);
         this.addBuildInfo = addBuildInfo;
     }
 
@@ -63,14 +61,6 @@ public class HorreumUploadConfig extends HorreumBaseConfig {
 
     public void setFiles(String files) {
         this.files = files;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = orEmpty(path);
     }
 
     public boolean getAddBuildInfo() {

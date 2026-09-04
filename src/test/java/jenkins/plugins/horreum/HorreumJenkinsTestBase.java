@@ -139,10 +139,10 @@ public abstract class HorreumJenkinsTestBase {
     }
 
     long createNode(long groupId, String name, String type, String operation) throws Exception {
-        String url = h5mBaseUrl + "/api/node?name=" + encode(name)
-                + "&groupId=" + groupId + "&type=" + type
-                + "&operation=" + encode(operation);
-        HttpResponse<String> response = doPost(url, "");
+        String body = String.format(
+                "{\"name\": \"%s\", \"groupId\": %d, \"type\": \"%s\", \"operation\": \"%s\"}",
+                name, groupId, type, operation != null ? operation : "");
+        HttpResponse<String> response = doPost(h5mBaseUrl + "/api/node", body);
         if (response.statusCode() != 200) {
             throw new RuntimeException("Create node '" + name + "' failed: " + response.body());
         }

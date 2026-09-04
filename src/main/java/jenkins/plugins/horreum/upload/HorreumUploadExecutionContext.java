@@ -26,7 +26,6 @@ public class HorreumUploadExecutionContext extends BaseExecutionContext<String> 
     private static final long POLL_INTERVAL_MS = 2000; // 2 seconds between polls
 
     private final String folder;
-    private final String path;
     private final String workspacePath;
     private final FilePath[] uploadFiles;
     private final String buildInfoJson; // serialized JSON string (ObjectNode is NOT Serializable)
@@ -68,17 +67,12 @@ public class HorreumUploadExecutionContext extends BaseExecutionContext<String> 
         }
 
         String folder = envVars != null ? envVars.expand(config.getFolder()) : config.getFolder();
-        String path = config.getPath();
-        if (path != null && !path.isEmpty() && envVars != null) {
-            path = envVars.expand(path);
-        }
 
         return new HorreumUploadExecutionContext(
                 url,
                 config.getAuthenticationType(),
                 config.getCredentials(),
                 folder,
-                path,
                 workspacePathSupplier.get(),
                 uploadFiles,
                 buildInfoJson,
@@ -93,7 +87,6 @@ public class HorreumUploadExecutionContext extends BaseExecutionContext<String> 
             String authenticationType,
             String credentials,
             String folder,
-            String path,
             String workspacePath,
             FilePath[] uploadFiles,
             String buildInfoJson,
@@ -104,7 +97,6 @@ public class HorreumUploadExecutionContext extends BaseExecutionContext<String> 
     ) {
         super(url, authenticationType, credentials, logger);
         this.folder = folder;
-        this.path = path;
         this.workspacePath = workspacePath;
         this.uploadFiles = uploadFiles;
         this.buildInfoJson = buildInfoJson;
@@ -132,7 +124,7 @@ public class HorreumUploadExecutionContext extends BaseExecutionContext<String> 
         }
 
         // Upload (resolve folder name to ID)
-        long uploadId = client.uploadToFolder(folder, path, jsonData);
+        long uploadId = client.uploadToFolder(folder, jsonData);
         logger().printf("Uploaded to folder '%s', upload ID: %d%n", folder, uploadId);
 
         // Await processing completion

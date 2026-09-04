@@ -30,9 +30,8 @@ public final class HorreumUploadStep extends HorreumBaseStep<HorreumUploadConfig
                              String folder,
                              String jsonFile,
                              String files,
-                             String path,
                              boolean addBuildInfo) {
-        super(new HorreumUploadConfig(authenticationType, credentials, folder, jsonFile, files, path, addBuildInfo));
+        super(new HorreumUploadConfig(authenticationType, credentials, folder, jsonFile, files, addBuildInfo));
     }
 
     public String getFolder() {
@@ -60,15 +59,6 @@ public final class HorreumUploadStep extends HorreumBaseStep<HorreumUploadConfig
     @DataBoundSetter
     public void setFiles(String files) {
         this.config.setFiles(files);
-    }
-
-    public String getPath() {
-        return config.getPath();
-    }
-
-    @DataBoundSetter
-    public void setPath(String path) {
-        this.config.setPath(path);
     }
 
     public boolean getAddBuildInfo() {
