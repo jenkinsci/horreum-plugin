@@ -27,7 +27,7 @@ THE SOFTWARE.
 	<parent>
 		<groupId>org.jenkins-ci.plugins</groupId>
 		<artifactId>plugin</artifactId>
-		<version>4.52</version>
+		<version>4.88</version>
 	</parent>
 
 	<groupId>io.jenkins.plugins</groupId>
@@ -36,14 +36,14 @@ THE SOFTWARE.
 	<packaging>hpi</packaging>
 	<name>Horreum Plugin</name>
 	<description>
-		This plugin 
+		Jenkins plugin for uploading performance test results to Horreum.
 	</description>
 	<url>https://github.com/jenkinsci/horreum-plugin</url>
 
 	<licenses>
 		<license>
-			<name>The Apache Software License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -56,25 +56,22 @@ THE SOFTWARE.
 	</scm>
 
 	<properties>
-		<revision>0.16.1</revision>
+		<revision>1.0.0</revision>
 		<changelist>-SNAPSHOT</changelist>
 		<scmTag>HEAD</scmTag>
 		<gitHubRepo>jenkinsci/horreum-plugin</gitHubRepo>
 
 		<!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
-		<jenkins.baseline>2.440</jenkins.baseline>
+		<jenkins.baseline>2.479</jenkins.baseline>
 		<jenkins.version>${jenkins.baseline}.3</jenkins.version>
-		<hpi-plugin.version>3.37</hpi-plugin.version>
+		<hpi-plugin.version>3.57</hpi-plugin.version>
 		<forkCount>1C</forkCount>
-		<jackson.version>2.17.2</jackson.version>
-		<access-modifier.version>1.25</access-modifier.version>
-		<junit.jupiter.version>5.9.1</junit.jupiter.version>
-		<keycloak.version>25.0.2</keycloak.version>
-		<maven.compiler.target>11</maven.compiler.target>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.release>11</maven.compiler.release>
+		<access-modifier.version>1.34</access-modifier.version>
+		<junit.jupiter.version>5.11.4</junit.jupiter.version>
+		<wiremock.version>3.10.0</wiremock.version>
+		<maven.compiler.release>17</maven.compiler.release>
 	</properties>
-	
+
 	<repositories>
 		<repository>
 			<id>jenkins-releases</id>
@@ -103,8 +100,12 @@ THE SOFTWARE.
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<forkCount>1</forkCount> <!-- Parallel execution won't work well with fixed port offsets -->
-					<reuseForks>true</reuseForks> <!-- This allows the containers to be created only once -->
+					<forkCount>1</forkCount>
+					<reuseForks>true</reuseForks>
+					<!-- Exclude Testcontainers-based tests by default (require Docker).
+					     Run them with: mvn test -Dgroups=e2e,jenkins-e2e
+					     or: mvn test -DincludeE2E -->
+					<excludedGroups>e2e,jenkins-e2e</excludedGroups>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -115,9 +116,8 @@ THE SOFTWARE.
 						<id>display-info</id>
 						<configuration>
 							<rules>
-								<!-- Override requirement for Maven 3.8.1 -->
 								<requireMavenVersion>
-									<version>3.6.3</version>
+									<version>3.9.0</version>
 								</requireMavenVersion>
 							</rules>
 						</configuration>
@@ -147,7 +147,7 @@ THE SOFTWARE.
 			<dependency>
 				<groupId>io.jenkins.tools.bom</groupId>
 				<artifactId>bom-${jenkins.baseline}.x</artifactId>
-				<version>3193.v330d8248d39e</version>
+				<version>5054.v620b_5d2b_d5e6</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -167,96 +167,34 @@ THE SOFTWARE.
 		</dependency>
 
 		<dependency>
-			<groupId>io.hyperfoil.tools</groupId>
-			<artifactId>horreum-client</artifactId>
-			<version>${revision}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>jackson-databind</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.eclipse.microprofile.config</groupId>
-					<artifactId>microprofile-config-api</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>jackson-annotations</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.maven.wagon</groupId>
-			<artifactId>wagon-http-shared</artifactId>
-			<version>3.5.3</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>${jackson.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-compress</artifactId>
-			<version>1.26.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>javax.annotation</groupId>
-			<artifactId>javax.annotation-api</artifactId>
-			<version>1.3.2</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jenkins-ci.main</groupId>
-			<artifactId>jenkins-core</artifactId>
-			<version>${jenkins.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jenkins-ci.plugins</groupId>
-			<artifactId>credentials</artifactId>
-			<version>1087.1089.v2f1b_9a_b_040e4</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jenkins-ci.plugins</groupId>
-			<artifactId>plain-credentials</artifactId>
-			<version>143.v1b_df8b_d3b_e48</version>
-		</dependency>
-
-		<dependency>
-			<groupId>javax.ws.rs</groupId>
-			<artifactId>javax.ws.rs-api</artifactId>
-			<version>2.1.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.15.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.17.2</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.jenkins-ci.plugins.workflow</groupId>
 			<artifactId>workflow-basic-steps</artifactId>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
-			<groupId>io.hyperfoil.tools</groupId>
-			<artifactId>horreum-infra-common</artifactId>
-			<version>${revision}</version>
-			<scope>test</scope>
+			<groupId>org.jenkins-ci.plugins</groupId>
+			<artifactId>credentials</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jenkins-ci.plugins</groupId>
+			<artifactId>plain-credentials</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>5.0.0</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Jackson is provided by Jenkins core at runtime -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.18.2</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -267,19 +205,57 @@ THE SOFTWARE.
 		</dependency>
 
 		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>42.5.4</version>
+			<groupId>org.wiremock</groupId>
+			<artifactId>wiremock-standalone</artifactId>
+			<version>${wiremock.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-slf4j-impl</artifactId>
-			<version>2.19.0</version>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>1.21.0</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>1.21.0</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>1.21.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<profiles>
+		<!-- Run E2E tests that require Docker (Testcontainers).
+		     Activate with: mvn test -DincludeE2E -->
+		<profile>
+			<id>e2e</id>
+			<activation>
+				<property>
+					<name>includeE2E</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<excludedGroups combine.self="override"/>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 	<developers>
 		<developer>
@@ -296,6 +272,11 @@ THE SOFTWARE.
 			<id>jwhiting</id>
 			<name>Jeremy Whiting</name>
 			<email>jwhiting@redhat.com</email>
+		</developer>
+		<developer>
+			<id>stalep</id>
+			<name>Stale Pedersen</name>
+			<email>spederse@redhat.com</email>
 		</developer>
 	</developers>
 </project>

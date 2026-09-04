@@ -1,32 +1,15 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:d="jelly:define" xmlns:local="local">
-	<d:taglib uri="local">
-		<!-- TODO remove and use div instead after baseline is 2.264 or newer -->
-		<d:tag name="blockWrapper">
-			<j:choose>
-				<j:when test="${divBasedFormLayout}">
-					<div>
-						<d:invokeBody/>
-					</div>
-				</j:when>
-				<j:otherwise>
-					<table style="width:100%">
-						<d:invokeBody/>
-					</table>
-				</j:otherwise>
-			</j:choose>
-		</d:tag>
-	</d:taglib>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
     <f:section title="Horreum Configuration">
         <f:entry title="Horreum Base URL">
-			<f:entry field="baseUrl" title="URL">
-				<f:textbox />
-			</f:entry>
+            <f:entry field="baseUrl" title="URL">
+                <f:textbox />
+            </f:entry>
         </f:entry>
-		<f:entry title="Retry delays">
-			<f:entry field="retries" title="Retries">
-				<f:textbox default="5, 10, 30, 60, 120"/>
-			</f:entry>
-		</f:entry>
+        <f:entry title="Retry delays">
+            <f:entry field="retries" title="Retries">
+                <f:textbox default="5, 10, 30, 60, 120"/>
+            </f:entry>
+        </f:entry>
     </f:section>
 </j:jelly>

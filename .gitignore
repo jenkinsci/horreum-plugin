@@ -2,3 +2,7 @@
 .idea
 target/*
 work/*
+.cachebro/
+.env
+
+AGENTS.md

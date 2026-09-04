@@ -1,4 +1,4 @@
 <?jelly escape-by-default='true'?>
 <div>
-  This plugin handles communication with Horreum.
+  This plugin uploads performance test results to Horreum and checks for regressions.
 </div>

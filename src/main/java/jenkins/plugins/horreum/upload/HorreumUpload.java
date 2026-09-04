@@ -2,142 +2,114 @@ package jenkins.plugins.horreum.upload;
 
 import javax.annotation.Nonnull;
 
-import jenkins.plugins.horreum.AuthenticationType;
-import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
 
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Item;
-import hudson.util.ListBoxModel;
 import jenkins.plugins.horreum.HorreumBaseBuilder;
 import jenkins.plugins.horreum.HorreumBaseDescriptor;
 
-//TODO: Make safe functionality as upload step
 public class HorreumUpload extends HorreumBaseBuilder<HorreumUploadConfig> {
-	@DataBoundConstructor
-	public HorreumUpload(       @Nonnull String authenticationType,
-								@Nonnull String credentials,
-								@Nonnull String test,
-								@Nonnull String owner,
-								@Nonnull String access,
-								@Nonnull String start,
-								@Nonnull String stop,
-								@Nonnull String schema,
-								String jsonFile,
-								String files,
-								boolean addBuildInfo) {
-		super(new HorreumUploadConfig(authenticationType, credentials, test, owner, access, start, stop, schema, jsonFile, files, addBuildInfo));
-	}
 
-	public String getTest() {
-		return config.getTest();
-	}
+    @DataBoundConstructor
+    public HorreumUpload(@Nonnull String authenticationType,
+                         @Nonnull String credentials,
+                         @Nonnull String folder,
+                         String jsonFile,
+                         String files,
+                         boolean addBuildInfo) {
+        super(new HorreumUploadConfig(authenticationType, credentials, folder, jsonFile, files, addBuildInfo));
+    }
 
-	@DataBoundSetter
-	public void setTest(String test) {
-		this.config.setTest(test);
-	}
+    public String getFolder() {
+        return config.getFolder();
+    }
 
-	public String getOwner() {
-		return config.getOwner();
-	}
+    @DataBoundSetter
+    public void setFolder(String folder) {
+        this.config.setFolder(folder);
+    }
 
-	@DataBoundSetter
-	public void setOwner(String owner) {
-		this.config.setOwner(owner);
-	}
+    public String getJsonFile() {
+        return config.getJsonFile();
+    }
 
-	public String getAccess() {
-		return this.config.getAccess();
-	}
+    @DataBoundSetter
+    public void setJsonFile(String jsonFile) {
+        this.config.setJsonFile(jsonFile);
+    }
 
-	@DataBoundSetter
-	public void setAccess(String access) {
-		this.config.setAccess(access);
-	}
+    public String getFiles() {
+        return config.getFiles();
+    }
 
-	public String getStart() {
-		return config.getStart();
-	}
+    @DataBoundSetter
+    public void setFiles(String files) {
+        this.config.setFiles(files);
+    }
 
-	@DataBoundSetter
-	public void setStart(String start) {
-		this.config.setStart(start);
-	}
+    public boolean getAddBuildInfo() {
+        return config.getAddBuildInfo();
+    }
 
-	public String getStop() {
-		return config.getStop();
-	}
+    @DataBoundSetter
+    public void setAddBuildInfo(boolean add) {
+        config.setAddBuildInfo(add);
+    }
 
-	@DataBoundSetter
-	public void setStop(String stop) {
-		this.config.setStop(stop);
-	}
+    public boolean getAwaitProcessing() {
+        return config.getAwaitProcessing();
+    }
 
-	@DataBoundSetter
-	public void setSchema(String schema) {
-		this.config.setSchema(schema);
-	}
+    @DataBoundSetter
+    public void setAwaitProcessing(boolean awaitProcessing) {
+        config.setAwaitProcessing(awaitProcessing);
+    }
 
-	public String getSchema() {
-		return config.getSchema();
-	}
+    public long getProcessingTimeout() {
+        return config.getProcessingTimeout();
+    }
 
-	public String getJsonFile() {
-		return config.getJsonFile();
-	}
+    @DataBoundSetter
+    public void setProcessingTimeout(long timeout) {
+        config.setProcessingTimeout(timeout);
+    }
 
-	@DataBoundSetter
-	public void setJsonFile(String jsonFile) {
-		this.config.setJsonFile(jsonFile);
-	}
+    public boolean getFailOnChanges() {
+        return config.getFailOnChanges();
+    }
 
-	public boolean getAddBuildInfo() {
-		return config.getAddBuildInfo();
-	}
+    @DataBoundSetter
+    public void setFailOnChanges(boolean failOnChanges) {
+        config.setFailOnChanges(failOnChanges);
+    }
 
-	@DataBoundSetter
-	public void setAddBuildInfo(boolean add) {
-		config.setAddBuildInfo(add);
-	}
+    @Override
+    protected HorreumUploadExecutionContext createExecutionContext(AbstractBuild<?, ?> build, BuildListener listener, EnvVars envVars) {
+        return HorreumUploadExecutionContext.from(config, envVars, build, listener,
+                () -> build.getWorkspace() == null ? null : build.getWorkspace().getRemote(),
+                () -> this.config.resolveUploadFiles(envVars, build));
+    }
 
-	@Override
-	protected HorreumUploadExecutionContext createExecutionContext(AbstractBuild<?, ?> build, BuildListener listener, EnvVars envVars) {
-		return HorreumUploadExecutionContext.from(config, envVars, build,	listener,
-				() -> build.getWorkspace() == null ? null : build.getWorkspace().getRemote(),
-				() -> this.config.resolveUploadFiles(envVars, build));
-	}
+    @Extension
+    public static final class DescriptorImpl extends HorreumBaseDescriptor {
 
-	@Extension
-	public static final class DescriptorImpl extends HorreumBaseDescriptor {
-		public static final String jsonFile = "";
+        public DescriptorImpl() {
+            load();
+        }
 
-		public DescriptorImpl() {
-			load();
-		}
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
+            return true;
+        }
 
-		@Override
-		public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-			return true;
-		}
-
-		@Override
-		public String getDisplayName() {
-			return "Horreum Upload";
-		}
-
-		public ListBoxModel doFillAccessItems(@AncestorInPath Item item, @QueryParameter String credentials) {
-			ListBoxModel items = new ListBoxModel();
-			items.add("PUBLIC");
-			items.add("PROTECTED");
-			items.add("PRIVATE");
-			return items;
-		}
-	}
+        @Override
+        public String getDisplayName() {
+            return "Horreum Upload";
+        }
+    }
 }

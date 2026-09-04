@@ -2,21 +2,22 @@ package jenkins.plugins.horreum;
 
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
-import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 
+/**
+ * Authentication modes supported by the Horreum plugin.
+ * <ul>
+ *   <li>{@link #API_KEY} - Bearer token authentication using an API key (stored as Jenkins secret text)</li>
+ *   <li>{@link #NONE} - No authentication (for Horreum instances with security disabled)</li>
+ * </ul>
+ */
 public enum AuthenticationType {
-    BASIC, OIDC, API_KEY;
+    API_KEY, NONE;
 
     Class<? extends Credentials> credentialsClass() {
-         switch (this) {
-             case BASIC:
-             case OIDC:
-                 return UsernamePasswordCredentials.class;
-             case API_KEY:
-                 return StringCredentials.class;
-             default:
-                 return StandardCredentials.class;
-         }
+        return switch (this) {
+            case API_KEY -> StringCredentials.class;
+            case NONE -> StandardCredentials.class;
+        };
     }
 }

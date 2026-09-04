@@ -1,90 +1,111 @@
 package jenkins.plugins.horreum;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
-import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousNonBlockingStepExecution;
+import org.jenkinsci.plugins.workflow.steps.Step;
+import org.jenkinsci.plugins.workflow.steps.StepContext;
+import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import hudson.EnvVars;
+import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Item;
+import hudson.model.Result;
 import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 
-public abstract class HorreumBaseStep<C extends HorreumBaseConfig> extends AbstractStepImpl {
-   protected final C config;
+public abstract class HorreumBaseStep<C extends HorreumBaseConfig> extends Step {
+    protected final C config;
 
-   protected HorreumBaseStep(C config) {
-      this.config = config;
+    protected HorreumBaseStep(C config) {
+        this.config = config;
+    }
 
-      // Populate step config from Global state HorreumGlobalConfig.get();
-   }
+    public String getAuthenticationType() {
+        return config.getAuthenticationType();
+    }
 
-   public String getAuthenticationType() {
-      return config.getAuthenticationType();
-   }
+    @DataBoundSetter
+    public void setAuthenticationType(String authenticationType) {
+        config.setAuthenticationType(authenticationType);
+    }
 
-   @DataBoundSetter
-   public void setAuthenticationType(String authenticationType) {
-      config.setAuthenticationType(authenticationType);
-   }
+    public String getCredentials() {
+        return config.getCredentials();
+    }
 
-   public String getCredentials() {
-      return config.getCredentials();
-   }
+    @DataBoundSetter
+    public void setCredentials(String credentials) {
+        config.setCredentials(credentials);
+    }
 
-   @DataBoundSetter
-   public void setCredentials(String credentials) {
-      config.setCredentials(credentials);
-   }
+    public Boolean getQuiet() {
+        return config.getQuiet();
+    }
 
-   public boolean getAbortOnFailure() {
-      return config.getAbortOnFailure();
-   }
+    @DataBoundSetter
+    public void setQuiet(Boolean quiet) {
+        this.config.setQuiet(quiet);
+    }
 
-   @DataBoundSetter
-   public void setAbortOnFailure(boolean abortOnFailure) {
-      this.config.setAbortOnFailure(abortOnFailure);
-   }
+    /**
+     * Required context for all Horreum steps: Run, TaskListener, Launcher, EnvVars, FilePath.
+     */
+    public static Set<Class<?>> requiredContext() {
+        Set<Class<?>> context = new HashSet<>();
+        context.add(Run.class);
+        context.add(TaskListener.class);
+        context.add(Launcher.class);
+        context.add(EnvVars.class);
+        context.add(FilePath.class);
+        return context;
+    }
 
-   public Boolean getQuiet() {
-      return config.getQuiet();
-   }
+    @SuppressWarnings("unchecked")
+    public abstract static class Execution<R, S extends HorreumBaseStep<?>> extends SynchronousNonBlockingStepExecution<R> {
+        private final transient S step;
 
-   @DataBoundSetter
-   public void setQuiet(Boolean quiet) {
-      this.config.setQuiet(quiet);
-   }
+        protected Execution(S step, StepContext context) {
+            super(context);
+            this.step = step;
+        }
 
-   public abstract static class Execution<R> extends AbstractSynchronousNonBlockingStepExecution<R> {
-      @Override
-      protected R run() throws Exception {
-         BaseExecutionContext<R> exec = createExecutionContext();
+        protected S getStep() {
+            return step;
+        }
 
-         Launcher launcher = getContext().get(Launcher.class);
-         if (launcher != null) {
-            VirtualChannel channel = launcher.getChannel();
-            if (channel == null) {
-               throw new IllegalStateException("Launcher doesn't support remoting but it is required");
-            }
-            // Fix loading class by name from TCL in org.jboss.resteasy.client.jaxrs.ProxyBuilder
-            Thread thread = Thread.currentThread();
-            ClassLoader originalClassLoader = thread.getContextClassLoader();
+        @Override
+        protected R run() throws Exception {
+            BaseExecutionContext<R> exec = createExecutionContext();
+
+            Launcher launcher = getContext().get(Launcher.class);
             try {
-               thread.setContextClassLoader(getClass().getClassLoader());
-               return channel.call(exec);
-            } finally {
-               thread.setContextClassLoader(originalClassLoader);
+                if (launcher != null) {
+                    VirtualChannel channel = launcher.getChannel();
+                    if (channel == null) {
+                        throw new IllegalStateException("Launcher doesn't support remoting but it is required");
+                    }
+                    return channel.call(exec);
+                }
+                return exec.call();
+            } catch (HorreumClient.ChangesDetectedException e) {
+                TaskListener listener = getContext().get(TaskListener.class);
+                if (listener != null) {
+                    listener.getLogger().println(e.getMessage());
+                }
+                Run<?, ?> run = getContext().get(Run.class);
+                if (run != null) {
+                    run.setResult(Result.UNSTABLE);
+                }
+                // Return the upload ID even when UNSTABLE so pipeline scripts can use it
+                return (R) String.valueOf(e.getUploadId());
             }
-         }
+        }
 
-         return exec.call();
-      }
-
-      protected abstract BaseExecutionContext<R> createExecutionContext() throws Exception;
-
-      public Item getProject() throws IOException, InterruptedException {
-         return getContext().get(Run.class).getParent();
-      }
-   }
+        protected abstract BaseExecutionContext<R> createExecutionContext() throws Exception;
+    }
 }

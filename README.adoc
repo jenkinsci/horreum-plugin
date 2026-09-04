@@ -1,7 +1,7 @@
 [[horreum-plugin]]
 = Horreum Plugin
 :toc: macro
-:toc-title: Horreum Plugin ToC
+:toc-title:
 ifdef::env-github[]
 :tip-caption: :bulb:
 :note-caption: :information_source:
@@ -14,118 +14,205 @@ toc::[]
 
 [abstract]
 .Overview
-This plugin sends a JSON result object to a Horreum instance secured by Keycloak. The request is made as a job
-execution in Jenkins and if the upload is unsuccessful, the job can be marked as failed
-(configurable).
+This plugin integrates Jenkins with https://horreum.hyperfoil.io[Horreum], a performance test result repository and regression detection system. It uploads JSON performance data to Horreum, waits for processing, and optionally marks the build as UNSTABLE when regressions are detected.
 
 == Features
 
-The following features are available in both Pipeline and traditional project types:
+The following features are available in both Pipeline and Freestyle project types:
 
-* Upload JSON result object to Horruem
-* Supports Keycloak Authentication
+* *Upload* JSON performance data to a Horreum folder
+* *Folder Ensure* — create a Horreum folder if it does not already exist
+* *Await processing* — wait for Horreum to finish processing the uploaded data
+* *Change detection* — check if the upload triggered any regressions (fixed threshold, relative difference, standard deviation anomaly, or e-divisive change points)
+* *Mark build UNSTABLE* when regressions are detected (configurable)
+* Supports *API Key* authentication
 
-=== Basic plugin features
+== Pipeline Usage
 
-=== Pipeline features
-
-Example upload of `output.json` to Horreum instance
-
-[source,groovy]
-----
-horreumUpload (
-    credentials: 'dev-ci',
-    test: 'Dummy Test',
-    owner: 'dev-team',
-    access: 'PUBLIC',
-    start: '$.build-timestamp',
-    stop: '$.build-timestamp',
-    jsonFile: 'run/localhost/output.json'
-)
-
-----
-
-You can access the response within a groovy script:
+=== Upload with change detection
 
 [source,groovy]
 ----
-def response = horreumUpload (
-    credentials: 'dev-ci',
-    test: 'Dummy Test',
-    owner: 'dev-team',
-    access: 'PUBLIC',
-    start: '$.build-timestamp',
-    stop: '$.build-timestamp',
-    jsonFile: 'run/localhost/output.json',
-    abortOnfailure: false,
-    quiet: false
-)
-println("Response: "+response)
+node {
+    // Ensure the folder exists (creates it if missing)
+    horreumFolderEnsure(
+        authenticationType: 'API_KEY',
+        credentials: 'horreum-api-key',
+        folder: 'my-perf-test'
+    )
+
+    // Upload results and check for regressions
+    def uploadId = horreumUpload(
+        authenticationType: 'API_KEY',
+        credentials: 'horreum-api-key',
+        folder: 'my-perf-test',
+        jsonFile: 'results/benchmark.json',
+        awaitProcessing: true,
+        processingTimeout: 300,
+        failOnChanges: true
+    )
+    echo "Upload ID: ${uploadId}"
+}
 ----
 
-The created Run ID by Horreum is provided in the response.
+If Horreum detects a regression (e.g., a value exceeding a fixed threshold), the build is marked as *UNSTABLE*.
+
+=== Upload without waiting
+
+[source,groovy]
+----
+node {
+    horreumUpload(
+        authenticationType: 'API_KEY',
+        credentials: 'horreum-api-key',
+        folder: 'my-perf-test',
+        jsonFile: 'results/output.json',
+        awaitProcessing: false
+    )
+}
+----
+
+=== Multiple file upload
+
+[source,groovy]
+----
+node {
+    horreumUpload(
+        authenticationType: 'API_KEY',
+        credentials: 'horreum-api-key',
+        folder: 'my-perf-test',
+        files: 'results/**/*.json'
+    )
+}
+----
+
+When uploading multiple files, they are merged into a single JSON object keyed by relative file path.
+
+=== Upload with build metadata
+
+[source,groovy]
+----
+node {
+    horreumUpload(
+        authenticationType: 'API_KEY',
+        credentials: 'horreum-api-key',
+        folder: 'my-perf-test',
+        jsonFile: 'results/output.json',
+        addBuildInfo: true
+    )
+}
+----
+
+When `addBuildInfo` is enabled, Jenkins build metadata (build URL, build number, job name, timestamps) is attached to the uploaded data under the schema `urn:horreum:jenkins-plugin:0.1`.
+
+=== No authentication (security disabled)
+
+If the Horreum instance has security disabled, use `authenticationType: 'NONE'`:
+
+[source,groovy]
+----
+node {
+    horreumUpload(
+        authenticationType: 'NONE',
+        folder: 'my-perf-test',
+        jsonFile: 'results/output.json'
+    )
+}
+----
+
+== Pipeline Step Reference
+
+=== horreumUpload
+
+Uploads JSON data to a Horreum folder.
+
+[cols="1,1,1,3"]
+|===
+| Parameter | Type | Default | Description
+
+| `authenticationType` | String | — | `API_KEY` or `NONE`
+| `credentials` | String | — | Jenkins credential ID (secret text containing the API key)
+| `folder` | String | — | Horreum folder name to upload to (must exist)
+| `jsonFile` | String | — | Path to a single JSON file in the workspace
+| `files` | String | — | Ant-style glob pattern for multiple files (e.g., `**/*.json`)
+| `path` | String | — | Optional path within the folder
+| `addBuildInfo` | boolean | `false` | Attach Jenkins build metadata to the upload
+| `awaitProcessing` | boolean | `true` | Wait for Horreum to finish processing
+| `processingTimeout` | long | `300` | Timeout in seconds for processing completion
+| `failOnChanges` | boolean | `false` | Mark build UNSTABLE if regressions are detected
+| `quiet` | boolean | `false` | Suppress plugin output in build log
+|===
+
+NOTE: Either `jsonFile` or `files` must be set, but not both.
+
+Returns the upload ID (string) which can be captured in a pipeline variable.
+
+=== horreumFolderEnsure
+
+Ensures a Horreum folder exists. Creates it if missing, succeeds silently if it already exists.
+
+[cols="1,1,1,3"]
+|===
+| Parameter | Type | Default | Description
+
+| `authenticationType` | String | — | `API_KEY` or `NONE`
+| `credentials` | String | — | Jenkins credential ID
+| `folder` | String | — | Horreum folder name to create/verify
+| `quiet` | boolean | `false` | Suppress plugin output in build log
+|===
+
+== Global Configuration
+
+Go to *Manage Jenkins > System > Horreum Configuration* and set:
+
+* *Horreum Base URL* — the URL of your Horreum instance (e.g., `https://horreum.example.com`)
+* *Retry delays* — comma-separated list of delays (in seconds) between retries on network errors. Default: `5, 10, 30, 60, 120`
+
+== Credentials Setup
+
+. In Horreum, create an API key (via the web UI or CLI)
+. In Jenkins, go to *Manage Jenkins > Credentials*
+. Add a *Secret text* credential with the API key value
+. Use the credential ID in your pipeline or freestyle project configuration
 
 == Building
 
-The plugin can be built using Maven
-
-[source, bash]
+[source,bash]
 ----
 mvn package -DskipTests=true
 ----
 
+NOTE: Building the HPI archive requires JDK 17. The CI Jenkinsfile is configured for JDK 17. Development and testing (`mvn test`) work on JDK 17+.
+
 == Testing
 
-Testing using Maven and JUnit:
+Unit tests (no Docker required):
 
-[source, bash]
+[source,bash]
 ----
 mvn test
 ----
 
-== Stand up Jenkins server instance
+All tests including E2E (requires Docker):
 
-The [Maven HPI plugin](https://jenkinsci.github.io/maven-hpi-plugin/) is used for standing up a Jenkins instance.
+[source,bash]
+----
+mvn test -DincludeE2E
+----
 
-[source, bash]
+The test suite includes:
+
+* *Unit tests* (23) — WireMock-based tests for the REST client (always run)
+* *Client E2E tests* (8) — Testcontainers tests against a real Horreum instance (require Docker)
+* *Jenkins integration tests* (13) — Full Jenkins + Horreum end-to-end tests using JenkinsRule and Testcontainers (require Docker)
+
+E2E and Jenkins integration tests are excluded by default because they require Docker. Use `-DincludeE2E` to include them.
+
+== Local Development
+
+Stand up a local Jenkins instance with the plugin installed:
+
+[source,bash]
 ----
 mvn hpi:run
 ----
-
-== Configure Global Settings
-
-This plugin adds global settings for the Horreum URL and retry strategy.
-
-image::docs/images/configure-horreum-global.png[]
-
-== Configure Credentials
-
-The login details for Horreum are stored in credentials.
-
-`HTTP Basic` and `Open ID Connect` methods use credentials stored as `Username with Password`.
-
-image::docs/images/configure-credentials-username-password.png[]
-
-Horreum `API Key` authentication method use credentials stored as `Secret Text`.
-
-image::docs/images/configure-credentials-apikey.png[]
-
-Here is an example where credentials of both types are stored in Jenkins.
-
-image::docs/images/configure-credentials.png[]
-
-== Setup Authentication
-
-Both `Horreum Expect` and `Horreum Upload` build steps require authentication.
-
-For deployment where Horreum is configured without a Keycloak (or other OIDC provider), choose `HTTP Basic` as the authentication type and pick a `Username with Password` credential.
-
-image::docs/images/setup-basic-authentication.png[]
-
-If the Horreum instance is setup with Keycloak (or other OIDC provider) choose the `Open ID Connect` authentication type and pick a `Username with Password` credential.
-
-image::docs/images/setup-oidc-authentication.png[]
-
-If `API Key` is the desired authentication method (available whether Horreum is deployed with or without Keycloak / OIDC) choose a `Secret Text` credential .
-
-image::docs/images/setup-apikey-authentication.png[]
